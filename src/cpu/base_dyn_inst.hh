@@ -241,6 +241,10 @@ class BaseDynInst : public ExecContext, public RefCounted
     // Need a copy of main request pointer to verify on writes.
     RequestPtr reqToVerify;
 
+    /////////////////////// Cache Miss depth//////////////////////
+    // get from request req from LSQ
+    uint8_t depth;
+    
   protected:
     /** Flattened register index of the destination registers of this
      *  instruction.

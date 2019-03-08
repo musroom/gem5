@@ -937,6 +937,13 @@ LSQUnit<Impl>::writeback(const DynInstPtr &inst, PacketPtr pkt)
         ++lsqIgnoredResponses;
         return;
     }
+   
+    if(inst->isLoad()){
+        std::cout<<"write miss to inst label";
+	std::cout<<"miss depth: "<<pkt->req->getAccessDepth()<<" ";
+        inst->dump();
+        inst->depth = pkt->req->getAccessDepth(); 
+    }
 
     if (!inst->isExecuted()) {
         inst->setExecuted();
