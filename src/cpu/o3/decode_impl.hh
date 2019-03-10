@@ -693,6 +693,12 @@ DefaultDecode<Impl>::decodeInsts(ThreadID tid)
             continue;
         }
 
+        //check if instruction is urgent 
+        if(checkIsUrgent(inst->pcState(), tid) == true) {
+            inst->urgent = true;
+        }
+
+
         // Also check if instructions have no source registers.  Mark
         // them as ready to issue at any time.  Not sure if this check
         // should exist here or at a later stage; however it doesn't matter
@@ -767,6 +773,38 @@ DefaultDecode<Impl>::decodeInsts(ThreadID tid)
     if (toRenameIndex) {
         wroteToTimeBuffer = true;
     }
+}
+
+bool checkIsUrgent(TheISA::PCState pc,ThreadID tid) {
+    if(urgInst[tid].empty() == true) {
+        return false;
+    }else{
+        list<TheISA::PCState>::iterator iter;
+        iter = std:find(urgInst[tid].begin(),urgInst[tid].end(),pc);
+        if(iter != urgentInst[tid].end()) {
+            return true;
+        } else {        
+            return false;
+        }
+    }
+} 
+
+void urgInsert(DynInstPtr inst, ThreadID tid) {
+    if(urgInst[tid].size() >= urgInstMaxSize) {
+        urgInst[tid].pop_front();
+    }
+    assert(urgInst[tid].size() < urgInstMaxSize);
+    
+    list<TheISA::PCState>::iterator iter;
+    iter = std:find(urgInst[tid].begin(),urgInst[tid].end(),inst->pcState());
+    if(iter != urgentInst[tid].end()) {
+        return;
+    } else {
+        urgInst[tid].push_back(inst->pcState());
+        return;
+    }
+    return
+
 }
 
 #endif//__CPU_O3_DECODE_IMPL_HH__
