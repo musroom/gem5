@@ -115,7 +115,9 @@ BaseDynInst<Impl>::initVars()
 
     // Initialize the fault to be NoFault.
     fault = NoFault;
-
+    
+    //init cache miss depth
+    depth = 0;
 #ifndef NDEBUG
     ++cpu->instcount;
 

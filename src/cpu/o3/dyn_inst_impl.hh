@@ -122,6 +122,7 @@ BaseO3DynInst<Impl>::initVars()
     commitTick = -1;
     storeTick = -1;
 #endif
+    urgent = false;
 }
 
 template <class Impl>

@@ -132,7 +132,8 @@ class BaseO3DynInst : public BaseDynInst<Impl>
     int32_t commitTick;
     int32_t storeTick;
 #endif
-
+    // is this instruction urgent
+    bool urgent;
     /** Reads a misc. register, including any side-effects the read
      * might have as defined by the architecture.
      */
