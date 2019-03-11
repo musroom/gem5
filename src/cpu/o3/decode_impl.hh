@@ -775,13 +775,15 @@ DefaultDecode<Impl>::decodeInsts(ThreadID tid)
     }
 }
 
-bool checkIsUrgent(TheISA::PCState pc,ThreadID tid) {
+template<class Impl>
+bool 
+DefaultDecode<Impl>::checkIsUrgent(TheISA::PCState pc,ThreadID tid) {
     if(urgInst[tid].empty() == true) {
         return false;
     }else{
         list<TheISA::PCState>::iterator iter;
-        iter = std:find(urgInst[tid].begin(),urgInst[tid].end(),pc);
-        if(iter != urgentInst[tid].end()) {
+        iter = std::find(urgInst[tid].begin(),urgInst[tid].end(),pc);
+        if(iter != urgInst[tid].end()) {
             return true;
         } else {        
             return false;
@@ -789,21 +791,25 @@ bool checkIsUrgent(TheISA::PCState pc,ThreadID tid) {
     }
 } 
 
-void urgInsert(DynInstPtr inst, ThreadID tid) {
+template<class Impl>
+void 
+DefaultDecode<Impl>::urgInsert(const DynInstPtr &inst, ThreadID tid) {
     if(urgInst[tid].size() >= urgInstMaxSize) {
         urgInst[tid].pop_front();
     }
     assert(urgInst[tid].size() < urgInstMaxSize);
     
     list<TheISA::PCState>::iterator iter;
-    iter = std:find(urgInst[tid].begin(),urgInst[tid].end(),inst->pcState());
-    if(iter != urgentInst[tid].end()) {
+    iter = std::find(urgInst[tid].begin(),urgInst[tid].end(),inst->pcState());
+    if(iter != urgInst[tid].end()) {
         return;
     } else {
         urgInst[tid].push_back(inst->pcState());
+        std::cout<<"insert pc to UIT ";
+        inst->dump();
         return;
     }
-    return
+    return;
 
 }
 

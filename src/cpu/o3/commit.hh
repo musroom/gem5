@@ -99,6 +99,8 @@ class DefaultCommit
 
     typedef typename CPUPol::Fetch Fetch;
     typedef typename CPUPol::IEW IEW;
+    
+    typedef typename CPUPol::Decode Decode;
 
     typedef O3ThreadState<Impl> Thread;
 
@@ -517,6 +519,12 @@ class DefaultCommit
 
     /** Number of cycles where the commit bandwidth limit is reached. */
     Stats::Scalar commitEligibleSamples;
+  public:
+    void setDecodeStage(Decode *decode_stage);
+
+    /** The pointer to the decode stage. Used to fill UIT */
+    Decode *decodeStage;
+
 };
 
 #endif // __CPU_O3_COMMIT_HH__

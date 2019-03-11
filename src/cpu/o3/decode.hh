@@ -154,7 +154,6 @@ class DefaultDecode
      */
     void decodeInsts(ThreadID tid);
     
-    bool checkIsUrgent(TheISA::PCState pc, ThreadID tid);
 
   private:
     /** Inserts a thread's instructions into the skid buffer, to be decoded
@@ -212,7 +211,6 @@ class DefaultDecode
     // Interfaces to objects outside of decode.
     /** CPU interface. */
     O3CPU *cpu;
-    int urgInstMaxSize = 128;
     /** Time buffer interface. */
     TimeBuffer<TimeStruct> *timeBuffer;
 
@@ -247,8 +245,6 @@ class DefaultDecode
     /** Skid buffer between fetch and decode. */
     std::queue<DynInstPtr> skidBuffer[Impl::MaxThreads];
     
-    /** Urgent instruction Table recode pc*/
-    std::list<TheISA::PCState> urgInst[Impl::MaxThreads];
 
     /** Variable that tracks if decode has written to the time buffer this
      * cycle. Used to tell CPU if there is activity this cycle.
@@ -325,6 +321,16 @@ class DefaultDecode
     Stats::Scalar decodeDecodedInsts;
     /** Stat for total number of squashed instructions. */
     Stats::Scalar decodeSquashedInsts;
+
+  public:
+    int urgInstMaxSize = 128;
+    
+    /** Urgent instruction Table recode pc*/
+    std::list<TheISA::PCState> urgInst[Impl::MaxThreads];
+    
+    void urgInsert(const DynInstPtr &inst, ThreadID tid);
+    bool checkIsUrgent(TheISA::PCState pc,ThreadID tid);
+    
 };
 
 #endif // __CPU_O3_DECODE_HH__

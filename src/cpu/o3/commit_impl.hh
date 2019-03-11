@@ -1411,6 +1411,10 @@ DefaultCommit<Impl>::updateComInstStats(const DynInstPtr &inst)
         if (inst->isAtomic()) {
             statComAmos[tid]++;
         }
+        
+        if(inst->depth >= 1) {
+            decodeStage->urgInsert(inst, tid);
+        }
     }
 
     if (inst->isMemBarrier()) {
@@ -1540,6 +1544,13 @@ DefaultCommit<Impl>::oldestReady()
     } else {
         return InvalidThreadID;
     }
+}
+
+template <class Impl>
+void
+DefaultCommit<Impl>::setDecodeStage(Decode *decode_stage)
+{
+    decodeStage = decode_stage;
 }
 
 #endif//__CPU_O3_COMMIT_IMPL_HH__
