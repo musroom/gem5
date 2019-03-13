@@ -63,27 +63,35 @@ SimpleRenameMap::init(unsigned size, SimpleFreeList *_freeList,
                       RegIndex _zeroReg)
 {
     assert(freeList == NULL);
-    assert(map.empty());
-
-    map.resize(size);
+    assert(secmap.empty());
+    assert(extmap.empty());
+    secmap.resize(size);
+    extmap.resize(size);
     freeList = _freeList;
     zeroReg = RegId(IntRegClass, _zeroReg);
 }
 
 SimpleRenameMap::RenameInfo
-SimpleRenameMap::rename(const RegId& arch_reg)
+SimpleRenameMap::rename(const RegId& arch_reg,TheISA::PCState pc)
 {
     PhysRegIdPtr renamed_reg;
     // Record the current physical register that is renamed to the
     // requested architected register.
-    PhysRegIdPtr prev_reg = map[arch_reg.flatIndex()];
+    PhysRegIdPtr prev_reg;
+    if(extmap[arch_reg.flatIndex()].preg == NULL) {
+        prev_reg = secmap[arch_reg.flatIndex()];
+    } else {
+        prev_reg = extmap[arch_reg.flatIndex()].preg;
+    }
 
     // If it's not referencing the zero register, then rename the
     // register.
     if (arch_reg != zeroReg) {
         renamed_reg = freeList->getReg();
 
-        map[arch_reg.flatIndex()] = renamed_reg;
+        extmap[arch_reg.flatIndex()].preg = renamed_reg;
+        extmap[arch_reg.flatIndex()].pc = pc;
+      
     } else {
         // Otherwise return the zero register so nothing bad happens.
         assert(prev_reg->isZeroReg());

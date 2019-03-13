@@ -56,6 +56,14 @@
 #include "cpu/reg_class.hh"
 #include "enums/VecRegRenameMode.hh"
 
+
+/** to set up a second RAT for LTP instruction to rename */
+struct ExtRAT {
+    PhysRegIdPtr preg;
+    TheISA::PCState pc;
+    bool parkBit;
+};
+
 /**
  * Register rename map for a single class of registers (e.g., integer
  * or floating point).  Because the register class is implicitly
@@ -68,10 +76,18 @@ class SimpleRenameMap
   private:
     using Arch2PhysMap = std::vector<PhysRegIdPtr>;
     /** The acutal arch-to-phys register map */
-    Arch2PhysMap map;
+    Arch2PhysMap secmap;
+    
+    /** second map used to rename ltp instruction*/                
+    using ExtArch2PhysMap = std::vector<ExtRAT>;
+    ExtArch2PhysMap extmap;
+
   public:
-    using iterator = Arch2PhysMap::iterator;
-    using const_iterator = Arch2PhysMap::const_iterator;
+    using sec_iterator = Arch2PhysMap::iterator;
+    using sec_const_iterator = Arch2PhysMap::const_iterator;
+    /** second RAT iterator*/
+    using ext_iterator = ExtArch2PhysMap::iterator;
+    using ext_const_iterator = ExtArch2PhysMap::const_iterator;
   private:
 
     /**
@@ -117,7 +133,7 @@ class SimpleRenameMap
      * @return A RenameInfo pair indicating both the new and previous
      * physical registers.
      */
-    RenameInfo rename(const RegId& arch_reg);
+    RenameInfo rename(const RegId& arch_reg,TheISA::PCState pc);
 
     /**
      * Look up the physical register mapped to an architectural register.
@@ -126,9 +142,16 @@ class SimpleRenameMap
      */
     PhysRegIdPtr lookup(const RegId& arch_reg) const
     {
-        assert(arch_reg.flatIndex() <= map.size());
-        return map[arch_reg.flatIndex()];
+        assert(arch_reg.flatIndex() <= extmap.size());
+        assert(arch_reg.flatIndex() <= secmap.size());
+         
+        if(extmap[arch_reg.flatIndex()].preg == NULL) {
+            return secmap[arch_reg.flatIndex()];
+        } else {
+            return extmap[arch_reg.flatIndex()].preg;
+        }
     }
+
 
     /**
      * Update rename map with a specific mapping.  Generally used to
@@ -138,8 +161,14 @@ class SimpleRenameMap
      */
     void setEntry(const RegId& arch_reg, PhysRegIdPtr phys_reg)
     {
-        assert(arch_reg.flatIndex() <= map.size());
-        map[arch_reg.flatIndex()] = phys_reg;
+        assert(arch_reg.flatIndex() <= extmap.size());
+        assert(arch_reg.flatIndex() <= secmap.size());
+        
+        extmap[arch_reg.flatIndex()].preg = phys_reg; 
+        TheISA::PCState pc_temp;
+        extmap[arch_reg.flatIndex()].pc = pc_temp;
+        extmap[arch_reg.flatIndex()].parkBit = false;
+        secmap[arch_reg.flatIndex()] = NULL;
     }
 
     /** Return the number of free entries on the associated free list. */
@@ -147,17 +176,33 @@ class SimpleRenameMap
 
     /** Forward begin/cbegin to the map. */
     /** @{ */
-    iterator begin() { return map.begin(); }
-    const_iterator begin() const { return map.begin(); }
-    const_iterator cbegin() const { return map.cbegin(); }
+    sec_iterator begin() { return secmap.begin(); }
+    sec_const_iterator begin() const { return secmap.begin(); }
+    sec_const_iterator cbegin() const { return secmap.cbegin(); }
     /** @} */
 
     /** Forward end/cend to the map. */
     /** @{ */
-    iterator end() { return map.end(); }
-    const_iterator end() const { return map.end(); }
-    const_iterator cend() const { return map.cend(); }
+    sec_iterator end() { return secmap.end(); }
+    sec_const_iterator end() const { return secmap.end(); }
+    sec_const_iterator cend() const { return secmap.cend(); }
     /** @} */
+
+
+    /** for second RAT Forward begin/cbegin to the map. */
+    /** @{ */
+    ext_iterator ext_begin() { return extmap.begin(); }
+    ext_const_iterator ext_begin() const { return extmap.begin(); }
+    ext_const_iterator ext_cbegin() const { return extmap.cbegin(); }
+    /** @} */
+
+    /** for second rat Forward end/cend to the map. */
+    /** @{ */
+    ext_iterator ext_end() { return extmap.end(); }
+    ext_const_iterator ext_end() const { return extmap.end(); }
+    ext_const_iterator ext_cend() const { return extmap.cend(); }
+    /** @} */
+
 };
 
 /**
@@ -226,23 +271,23 @@ class UnifiedRenameMap
      * @return A RenameInfo pair indicating both the new and previous
      * physical registers.
      */
-    RenameInfo rename(const RegId& arch_reg)
+    RenameInfo rename(const RegId& arch_reg,TheISA::PCState pc)
     {
         switch (arch_reg.classValue()) {
           case IntRegClass:
-            return intMap.rename(arch_reg);
+            return intMap.rename(arch_reg,pc);
           case FloatRegClass:
-            return floatMap.rename(arch_reg);
+            return floatMap.rename(arch_reg,pc);
           case VecRegClass:
             assert(vecMode == Enums::Full);
-            return vecMap.rename(arch_reg);
+            return vecMap.rename(arch_reg,pc);
           case VecElemClass:
             assert(vecMode == Enums::Elem);
-            return vecElemMap.rename(arch_reg);
+            return vecElemMap.rename(arch_reg,pc);
           case VecPredRegClass:
-            return predMap.rename(arch_reg);
+            return predMap.rename(arch_reg,pc);
           case CCRegClass:
-            return ccMap.rename(arch_reg);
+            return ccMap.rename(arch_reg,pc);
           case MiscRegClass:
             {
             // misc regs aren't really renamed, just remapped

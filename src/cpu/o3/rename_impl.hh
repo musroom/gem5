@@ -1121,7 +1121,7 @@ DefaultRename<Impl>::renameDestRegs(const DynInstPtr &inst, ThreadID tid)
 
         RegId flat_dest_regid = tc->flattenRegId(dest_reg);
 
-        rename_result = map->rename(flat_dest_regid);
+        rename_result = map->rename(flat_dest_regid,inst->pcState());
 
         inst->flattenDestReg(dest_idx, flat_dest_regid);
 
