@@ -1,4 +1,4 @@
-i/*
+/*
  * Copyright (c) 2012, 2014 ARM Limited
  * All rights reserved
  *
@@ -805,7 +805,7 @@ DefaultDecode<Impl>::urgInsert(const DynInstPtr &inst, ThreadID tid) {
         return;
     } else {
         urgInst[tid].push_back(inst->pcState());
-        std::cout<<"insert pc to UIT "<<"inst:";
+        std::cout<<"insert pc to UIT "<<"|inst:";
         inst->dump();
         return;
     }
