@@ -76,6 +76,7 @@ DefaultRename<Impl>::DefaultRename(O3CPU *_cpu, DerivO3CPUParams *params)
 
     // @todo: Make into a parameter.
     skidBufferMax = (decodeToRenameDelay + 1) * params->decodeWidth;
+    LTPMax = 128;
     for (uint32_t tid = 0; tid < Impl::MaxThreads; tid++) {
         renameStatus[tid] = Idle;
         renameMap[tid] = nullptr;
@@ -87,6 +88,7 @@ DefaultRename<Impl>::DefaultRename(O3CPU *_cpu, DerivO3CPUParams *params)
         stalls[tid] = {false, false};
         serializeInst[tid] = nullptr;
         serializeOnNextInst[tid] = false;
+        gateLTP[tid] = false;
     }
 }
 
@@ -274,6 +276,7 @@ DefaultRename<Impl>::clearStates(ThreadID tid)
     storesInProgress[tid] = 0;
 
     serializeOnNextInst[tid] = false;
+    gateLTP[tid] = false;
 }
 
 template <class Impl>
@@ -1464,6 +1467,44 @@ DefaultRename<Impl>::dumpHistory()
             buf_it++;
         }
     }
+}
+
+
+template <class Impl>
+void
+DefaultRename<Impl>::openLTP(ThreadID tid)
+{
+    if(gateLTP[tid] == true) return;
+    else gateLTP[tid] = true;
+}
+
+
+//add for turn off LTP
+template <class Impl>
+void
+DefaultRename<Impl>::closeLTP(ThreadID tid)
+{
+    if(gateLTP[tid] == false) return;
+    else gateLTP[tid] = false;
+}
+
+//insert instruction to LTP 
+template <class Impl>
+bool
+DefaultRename<Impl>::insertLTP(DynInstPtr &inst,ThreadID tid)
+{
+    if(LTP[tid].size() >= LTPMax) {
+        wakeUpInst(LTP[tid].front());
+        LTP[tid].pop()
+    }
+    LTP[tid].push(inst);
+    return true;
+}
+
+template <class Impl>
+bool
+DefaultRename<Impl>::wakeUpInst(const InstSeqNum &squash_seq_num,ThreadID tid)
+{
 }
 
 #endif//__CPU_O3_RENAME_IMPL_HH__

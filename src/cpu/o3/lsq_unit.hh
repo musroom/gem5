@@ -60,7 +60,7 @@
 #include "debug/LSQUnit.hh"
 #include "mem/packet.hh"
 #include "mem/port.hh"
-
+#include "mem/dram_ctrl.hh"
 struct DerivO3CPUParams;
 #include "base/circular_queue.hh"
 
@@ -603,6 +603,11 @@ class LSQUnit
     typedef typename CircularQueue<SQEntry>::iterator SQIterator;
     typedef CircularQueue<LQEntry> LQueue;
     typedef CircularQueue<SQEntry> SQueue;
+  private:
+    Cycles timer;
+    Cycles dramLatency;
+  public:
+    void setLTP(Cycles curCycle); 
 };
 
 template <class Impl>

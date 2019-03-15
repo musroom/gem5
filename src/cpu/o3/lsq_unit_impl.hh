@@ -170,6 +170,7 @@ LSQUnit<Impl>::init(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3CPUParams *params,
     needsTSO = params->needsTSO;
 
     resetState();
+    dramLatency = cycles(13750 * 3 / 1000);
 }
 
 
@@ -942,6 +943,8 @@ LSQUnit<Impl>::writeback(const DynInstPtr &inst, PacketPtr pkt)
         //std::cout<<"write miss to inst label";
 	//std::cout<<" miss depth: "<<pkt->req->getAccessDepth()<<" ";
         //inst->dump();
+        //std::cout<<"cycle: "<<cpu->curCycle()<<std::endl;
+        Tick a = DRAMCtrlParams::tRP;
         inst->depth = pkt->req->getAccessDepth(); 
     }
 
@@ -1120,4 +1123,11 @@ LSQUnit<Impl>::cacheLineSize()
     return cpu->cacheLineSize();
 }
 
+template <class Impl>
+void
+LSQUnit<Impl>::setLTP(Cycles curCycle)
+{
+
+
+}
 #endif//__CPU_O3_LSQ_UNIT_IMPL_HH__
