@@ -610,7 +610,7 @@ class LSQUnit
     Cycles timer;
     Cycles dramLatency;
   public:
-    void setLTP(Cycles curCycle); 
+    void setLTP(Cycles curCycle,uint8_t depth,ThreadID tid);
     void setRenameStage2(Rename *rename_stage);
 };
 

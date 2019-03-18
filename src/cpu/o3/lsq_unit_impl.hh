@@ -153,7 +153,7 @@ LSQUnit<Impl>::LSQUnit(uint32_t lqEntries, uint32_t sqEntries)
 
 template<class Impl>
 void
-LSQUnit<Impl>::init(O3CPU *cpu_ptr, IEW *iew_ptr, Rename *rename_ptr,DerivO3CPUParams *params,
+LSQUnit<Impl>::init(O3CPU *cpu_ptr, IEW *iew_ptr,DerivO3CPUParams *params,
         LSQ *lsq_ptr, unsigned id)
 {
     lsqID = id;
@@ -170,8 +170,8 @@ LSQUnit<Impl>::init(O3CPU *cpu_ptr, IEW *iew_ptr, Rename *rename_ptr,DerivO3CPUP
     needsTSO = params->needsTSO;
 
     resetState();
-    dramLatency = cycles(13750 * 3 / 1000);
-    renameStage = rename_ptr;
+    int temp_cy = 13750 * 3 / 1000;
+    dramLatency = Cycles(temp_cy);
 }
 
 
@@ -190,7 +190,7 @@ LSQUnit<Impl>::resetState()
     stalled = false;
 
     cacheBlockMask = ~(cpu->cacheLineSize() - 1);
-    timer = -1;
+    timer = Cycles(-1);
 }
 
 template<class Impl>
@@ -1129,7 +1129,7 @@ template <class Impl>
 void
 LSQUnit<Impl>::setLTP(Cycles curCycle,uint8_t depth,ThreadID tid)
 {
-    bool old_sta = getLTPStatus(tid);
+    bool old_sta = renameStage->getLTPStatus(tid);
     bool sta = old_sta;
     // if have miss need to turn on the LTP ,if time out need to turn off rhe ltp
     // mothing happened we should keep the status
@@ -1138,13 +1138,15 @@ LSQUnit<Impl>::setLTP(Cycles curCycle,uint8_t depth,ThreadID tid)
         sta = true;
     }else if(curCycle == timer) {
         sta = false;
-        timer = -1;
+        timer = Cycles(-1);
     }
-
+    /*
     if(old_sta != sta) {
         if(sta == true) renameStage->openLTP(tid);
         else renameStage->closeLTP(tid);
     }
+    */
+    //std::cout<<"Timer: "<<timer<<" "<<"status: "<<sta<<std::endl;
 }
     
         

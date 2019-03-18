@@ -1109,14 +1109,6 @@ LSQ<Impl>::SplitDataRequest::isCacheBlockHit(Addr blockAddr, Addr blockMask)
     return is_hit;
 }
 
-template<class Impl>
-void
-LSQ<Impl>::setRenameStage1(Rename *rename_stage) {
-    rename_ptr = rename_stage;
-    for (ThreadID tid = 0; tid < numThreads; tid++) {
-        thread[tid].setRenameStage2(&rename_stage);
-    }
-}
 
 
 

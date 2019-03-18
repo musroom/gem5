@@ -1045,4 +1045,13 @@ LSQ<Impl>::write(LSQRequest* req, uint8_t *data, int store_idx)
     return thread.at(tid).write(req, data, store_idx);
 }
 
+template<class Impl>
+void
+LSQ<Impl>::setRenameStage1(Rename *rename_stage) {
+    rename_ptr = rename_stage;
+    for (ThreadID tid = 0; tid < numThreads; tid++) {
+        thread[tid].setRenameStage2(rename_stage);
+    }
+}
+
 #endif // __CPU_O3_LSQ_HH__

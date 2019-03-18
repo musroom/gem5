@@ -1504,7 +1504,7 @@ DefaultRename<Impl>::insertLTP(DynInstPtr &inst,ThreadID tid)
 {
     if(LTP[tid].size() >= LTPMax) {
         wakeUpInst(LTP[tid].front());
-        LTP[tid].pop()
+        LTP[tid].pop();
     }
     LTP[tid].push(inst);
     return true;
@@ -1512,8 +1512,9 @@ DefaultRename<Impl>::insertLTP(DynInstPtr &inst,ThreadID tid)
 
 template <class Impl>
 bool
-DefaultRename<Impl>::wakeUpInst(const InstSeqNum &squash_seq_num,ThreadID tid)
+DefaultRename<Impl>::wakeUpInst(DynInstPtr &inst)
 {
+    return true;
 }
 
 #endif//__CPU_O3_RENAME_IMPL_HH__

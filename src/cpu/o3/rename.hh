@@ -531,14 +531,14 @@ class DefaultRename
     Stats::Scalar renameSkidInsts;
   private:
     InstQueue_normal LTP[Impl::MaxThreads];
-    bool gateLTP[Impl::MaxThreads];
-    bool getLTPStatus(ThreadID tid);
     unsigned LTPMax;
   public:
     void openLTP(ThreadID tid);
     void closeLTP(ThreadID tid);
     bool insertLTP(DynInstPtr &inst,ThreadID tid);
-    bool wakeUpInst(const InstSeqNum &squash_seq_num,ThreadID tid);
+    bool wakeUpInst(DynInstPtr &inst);
+    bool gateLTP[Impl::MaxThreads];
+    bool getLTPStatus(ThreadID tid);
 };
 
 #endif // __CPU_O3_RENAME_HH__

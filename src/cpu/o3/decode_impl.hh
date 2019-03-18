@@ -805,8 +805,9 @@ DefaultDecode<Impl>::urgInsert(const DynInstPtr &inst, ThreadID tid) {
         return;
     } else {
         urgInst[tid].push_back(inst->pcState());
-        std::cout<<"insert pc to UIT "<<"|inst:";
-        inst->dump();
+        //std::cout<<"insert pc to UIT "<<"|inst:";
+        //inst->dump();
+        //std::cout<<urgInst[tid].size()<<std::endl;
         return;
     }
     return;
