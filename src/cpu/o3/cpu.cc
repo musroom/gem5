@@ -244,6 +244,7 @@ FullO3CPU<Impl>::FullO3CPU(DerivO3CPUParams *params)
     rename.setIEWStage(&iew);
     rename.setCommitStage(&commit);
     commit.setDecodeStage(&decode);
+    iew.setRenameStage(&rename);
 
     ThreadID active_threads;
     if (FullSystem) {

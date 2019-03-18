@@ -532,6 +532,7 @@ class DefaultRename
   private:
     InstQueue_normal LTP[Impl::MaxThreads];
     bool gateLTP[Impl::MaxThreads];
+    bool getLTPStatus(ThreadID tid);
     unsigned LTPMax;
   public:
     void openLTP(ThreadID tid);

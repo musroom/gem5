@@ -88,7 +88,8 @@ class DefaultIEW
     typedef typename CPUPol::IQ IQ;
     typedef typename CPUPol::RenameMap RenameMap;
     typedef typename CPUPol::LSQ LSQ;
-
+    typedef typename CPUPol::Rename Rename;
+    
     typedef typename CPUPol::TimeStruct TimeStruct;
     typedef typename CPUPol::IEWStruct IEWStruct;
     typedef typename CPUPol::RenameStruct RenameStruct;
@@ -482,6 +483,9 @@ class DefaultIEW
     Stats::Formula wbRate;
     /** Average number of woken instructions per writeback. */
     Stats::Formula wbFanout;
+  private:
+    Rename *rename_ptr;
+  public:
+    void setRenameStage(Rename *rename_stage);
 };
-
 #endif // __CPU_O3_IEW_HH__

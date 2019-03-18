@@ -153,7 +153,7 @@ LSQUnit<Impl>::LSQUnit(uint32_t lqEntries, uint32_t sqEntries)
 
 template<class Impl>
 void
-LSQUnit<Impl>::init(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3CPUParams *params,
+LSQUnit<Impl>::init(O3CPU *cpu_ptr, IEW *iew_ptr, Rename *rename_ptr,DerivO3CPUParams *params,
         LSQ *lsq_ptr, unsigned id)
 {
     lsqID = id;
@@ -171,6 +171,7 @@ LSQUnit<Impl>::init(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3CPUParams *params,
 
     resetState();
     dramLatency = cycles(13750 * 3 / 1000);
+    renameStage = rename_ptr;
 }
 
 
@@ -189,6 +190,7 @@ LSQUnit<Impl>::resetState()
     stalled = false;
 
     cacheBlockMask = ~(cpu->cacheLineSize() - 1);
+    timer = -1;
 }
 
 template<class Impl>
@@ -944,8 +946,8 @@ LSQUnit<Impl>::writeback(const DynInstPtr &inst, PacketPtr pkt)
 	//std::cout<<" miss depth: "<<pkt->req->getAccessDepth()<<" ";
         //inst->dump();
         //std::cout<<"cycle: "<<cpu->curCycle()<<std::endl;
-        Tick a = DRAMCtrlParams::tRP;
         inst->depth = pkt->req->getAccessDepth(); 
+        setLTP(cpu->curCycle(),inst->depth,inst->threadNumber);
     }
 
     if (!inst->isExecuted()) {
@@ -1125,9 +1127,35 @@ LSQUnit<Impl>::cacheLineSize()
 
 template <class Impl>
 void
-LSQUnit<Impl>::setLTP(Cycles curCycle)
+LSQUnit<Impl>::setLTP(Cycles curCycle,uint8_t depth,ThreadID tid)
 {
+    bool old_sta = getLTPStatus(tid);
+    bool sta = old_sta;
+    // if have miss need to turn on the LTP ,if time out need to turn off rhe ltp
+    // mothing happened we should keep the status
+    if(depth >= 1) {
+        timer = dramLatency + curCycle;
+        sta = true;
+    }else if(curCycle == timer) {
+        sta = false;
+        timer = -1;
+    }
 
-
+    if(old_sta != sta) {
+        if(sta == true) renameStage->openLTP(tid);
+        else renameStage->closeLTP(tid);
+    }
 }
+    
+        
+template <class Impl>
+void
+LSQUnit<Impl>::setRenameStage2(Rename *rename_stage) {
+    renameStage = rename_stage;
+}
+        
+
+
+
+
 #endif//__CPU_O3_LSQ_UNIT_IMPL_HH__

@@ -59,7 +59,7 @@
 using namespace std;
 
 template <class Impl>
-LSQ<Impl>::LSQ(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3CPUParams *params)
+LSQ<Impl>::LSQ(O3CPU *cpu_ptr, IEW *iew_ptr,DerivO3CPUParams *params)
     : cpu(cpu_ptr), iewStage(iew_ptr),
       _cacheBlocked(false),
       cacheStorePorts(params->cacheStorePorts), usedStorePorts(0),
@@ -101,7 +101,7 @@ LSQ<Impl>::LSQ(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3CPUParams *params)
     thread.reserve(numThreads);
     for (ThreadID tid = 0; tid < numThreads; tid++) {
         thread.emplace_back(maxLQEntries, maxSQEntries);
-        thread[tid].init(cpu, iew_ptr, params, this, tid);
+        thread[tid].init(cpu, iew_ptr,params, this, tid);
         thread[tid].setDcachePort(&cpu_ptr->getDataPort());
     }
 }
@@ -1108,5 +1108,18 @@ LSQ<Impl>::SplitDataRequest::isCacheBlockHit(Addr blockAddr, Addr blockMask)
     }
     return is_hit;
 }
+
+template<class Impl>
+void
+LSQ<Impl>::setRenameStage1(Rename *rename_stage) {
+    rename_ptr = rename_stage;
+    for (ThreadID tid = 0; tid < numThreads; tid++) {
+        thread[tid].setRenameStage2(&rename_stage);
+    }
+}
+
+
+
+
 
 #endif//__CPU_O3_LSQ_IMPL_HH__

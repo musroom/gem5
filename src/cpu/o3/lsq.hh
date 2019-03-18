@@ -65,6 +65,7 @@ class LSQ
     typedef typename Impl::DynInstPtr DynInstPtr;
     typedef typename Impl::CPUPol::IEW IEW;
     typedef typename Impl::CPUPol::LSQUnit LSQUnit;
+    typedef typename Impl::CPUPol::Rename Rename;
 
     class LSQRequest;
     /** Derived class to hold any sender state the LSQ needs. */
@@ -732,7 +733,7 @@ class LSQ
     };
 
     /** Constructs an LSQ with the given parameters. */
-    LSQ(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3CPUParams *params);
+    LSQ(O3CPU *cpu_ptr, IEW *iew_ptr,DerivO3CPUParams *params);
     ~LSQ() { }
 
     /** Returns the name of the LSQ. */
@@ -1020,6 +1021,10 @@ class LSQ
 
     /** Number of Threads. */
     ThreadID numThreads;
+  private:
+    Rename *rename_ptr;
+  public:
+    void setRenameStage1(Rename *rename_stage);
 };
 
 template <class Impl>

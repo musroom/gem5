@@ -1682,4 +1682,11 @@ DefaultIEW<Impl>::checkMisprediction(const DynInstPtr& inst)
     }
 }
 
+template <class Impl>
+void
+DefaultIEW<Impl>::setRenameStage(Rename *rename_stage) {
+    rename_ptr = rename_stage;
+    ldstQueue.setRenameStage1(&rename_stage); 
+}
+
 #endif//__CPU_O3_IEW_IMPL_IMPL_HH__

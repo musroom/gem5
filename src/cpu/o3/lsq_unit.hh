@@ -60,7 +60,6 @@
 #include "debug/LSQUnit.hh"
 #include "mem/packet.hh"
 #include "mem/port.hh"
-#include "mem/dram_ctrl.hh"
 struct DerivO3CPUParams;
 #include "base/circular_queue.hh"
 
@@ -85,6 +84,7 @@ class LSQUnit
     typedef typename Impl::CPUPol::IEW IEW;
     typedef typename Impl::CPUPol::LSQ LSQ;
     typedef typename Impl::CPUPol::IssueStruct IssueStruct;
+    typedef typename Impl::CPUPol::Rename Rename;
 
     using LSQSenderState = typename LSQ::LSQSenderState;
     using LSQRequest = typename Impl::CPUPol::LSQ::LSQRequest;
@@ -221,7 +221,7 @@ class LSQUnit
     LSQUnit(const LSQUnit &l) { panic("LSQUnit is not copy-able"); }
 
     /** Initializes the LSQ unit with the specified number of entries. */
-    void init(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3CPUParams *params,
+    void init(O3CPU *cpu_ptr, IEW *iew_ptr,DerivO3CPUParams *params,
             LSQ *lsq_ptr, unsigned id);
 
     /** Returns the name of the LSQ unit. */
@@ -386,6 +386,9 @@ class LSQUnit
 
     /** Pointer to the IEW stage. */
     IEW *iewStage;
+
+    /** Pointer to the rename stage. */
+    Rename *renameStage;
 
     /** Pointer to the LSQ. */
     LSQ *lsq;
@@ -608,6 +611,7 @@ class LSQUnit
     Cycles dramLatency;
   public:
     void setLTP(Cycles curCycle); 
+    void setRenameStage2(Rename *rename_stage);
 };
 
 template <class Impl>

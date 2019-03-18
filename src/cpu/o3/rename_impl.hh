@@ -1488,6 +1488,15 @@ DefaultRename<Impl>::closeLTP(ThreadID tid)
     else gateLTP[tid] = false;
 }
 
+//get LTP status
+template <class Impl>
+bool
+DefaultRename<Impl>::getLTPStatus(ThreadID tid)
+{
+    return gateLTP[tid];
+}
+
+
 //insert instruction to LTP 
 template <class Impl>
 bool
