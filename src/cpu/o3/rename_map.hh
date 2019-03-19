@@ -165,8 +165,7 @@ class SimpleRenameMap
         assert(arch_reg.flatIndex() <= secmap.size());
         
         extmap[arch_reg.flatIndex()].preg = phys_reg; 
-        TheISA::PCState pc_temp;
-        extmap[arch_reg.flatIndex()].pc = pc_temp;
+        extmap[arch_reg.flatIndex()].pc = 0;
         extmap[arch_reg.flatIndex()].parkBit = false;
         secmap[arch_reg.flatIndex()] = NULL;
     }
@@ -202,6 +201,13 @@ class SimpleRenameMap
     ext_const_iterator ext_end() const { return extmap.end(); }
     ext_const_iterator ext_cend() const { return extmap.cend(); }
     /** @} */
+    
+
+    TheISA::PCState getSourceInstPC(const RegId& arch_reg) const
+    {
+        assert(arch_reg.flatIndex() <= extmap.size());
+        return extmap[arch_reg.flatIndex()].pc;
+    }
 
 };
 
@@ -448,6 +454,41 @@ class UnifiedRenameMap
      * depending on vecMode (vector renaming mode).
      */
     void switchFreeList(UnifiedFreeList* freeList);
+    
+    /**get pc from source reg using RAT*/
+    TheISA::PCState getSourceInstPC(const RegId& arch_reg) const
+    {
+        switch (arch_reg.classValue()) {
+          case IntRegClass:
+            return intMap.getSourceInstPC(arch_reg);
+
+          case FloatRegClass:
+            return  floatMap.getSourceInstPC(arch_reg);
+
+          case VecRegClass:
+            assert(vecMode == Enums::Full);
+            return  vecMap.getSourceInstPC(arch_reg);
+
+          case VecElemClass:
+            assert(vecMode == Enums::Elem);
+            return  vecElemMap.getSourceInstPC(arch_reg);
+
+          case VecPredRegClass:
+            return predMap.getSourceInstPC(arch_reg);
+
+          case CCRegClass:
+            return ccMap.getSourceInstPC(arch_reg);
+          
+          case MiscRegClass:
+            // misc regs aren't really renamed, they keep the same
+            // mapping throughout the execution.
+            return 0;
+
+          default:
+            panic("rename getSourceInstPC(): unknown reg class %s\n",
+                  arch_reg.className());
+        }
+    }
 
 };
 

@@ -1089,7 +1089,16 @@ DefaultRename<Impl>::renameSrcRegs(const DynInstPtr &inst, ThreadID tid)
                 renamed_reg->className());
 
         inst->renameSrcReg(src_idx, renamed_reg);
-
+        
+        //if the current inst is urgent then it source inst is urgent and need add to UIT
+        if(inst->urgent == true){
+            TheISA::PCState temp = map->getSourceInstPC(tc->flattenRegId(src_reg));
+            if(temp != 0) {
+                decode_ptr->urgInsert(inst, tid);
+                inst->urgent = true;
+            }
+        }
+    
         // See if the register is ready or not.
         if (scoreboard->getReg(renamed_reg)) {
             DPRINTF(Rename, "[tid:%u]: Register %d (flat: %d) (%s)"
