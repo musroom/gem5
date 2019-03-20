@@ -1139,7 +1139,7 @@ LSQUnit<Impl>::setLTP(Cycles curCycle,uint8_t depth,ThreadID tid)
     }else if(curCycle == timer) {
         sta = false;
         timer = Cycles(-1);
-    }else
+    }
     
     if(old_sta != sta) {
         //if(sta == true) renameStage->openLTP(tid);

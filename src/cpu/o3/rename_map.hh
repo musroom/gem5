@@ -209,6 +209,7 @@ class SimpleRenameMap
         return extmap[arch_reg.flatIndex()].pc;
     }
 
+    RenameInfo renameWakeUp(const RegId& arch_reg);
 };
 
 /**
@@ -489,6 +490,39 @@ class UnifiedRenameMap
                   arch_reg.className());
         }
     }
+    
+    RenameInfo renameWakeUp(const RegId& arch_reg)
+    {
+        switch (arch_reg.classValue()) {
+          case IntRegClass:
+            return intMap.renameWakeUp(arch_reg);
+          case FloatRegClass:
+            return floatMap.renameWakeUp(arch_reg);
+          case VecRegClass:
+            assert(vecMode == Enums::Full);
+            return vecMap.renameWakeUp(arch_reg);
+          case VecElemClass:
+            assert(vecMode == Enums::Elem);
+            return vecElemMap.renameWakeUp(arch_reg);
+          case VecPredRegClass:
+            return predMap.renameWakeUp(arch_reg);
+          case CCRegClass:
+            return ccMap.renameWakeUp(arch_reg);
+          case MiscRegClass:
+            {
+               // misc regs aren't really renamed, just remapped
+                PhysRegIdPtr phys_reg = lookup(arch_reg);
+                // Set the new register to the previous one to keep the same
+                // mapping throughout the execution.
+                return RenameInfo(phys_reg, phys_reg);
+            }
+
+          default:
+            panic("rename rename(): unknown reg class %s\n",
+                  arch_reg.className());
+        }
+    }
+
 
 };
 

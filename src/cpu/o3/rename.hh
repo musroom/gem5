@@ -537,12 +537,16 @@ class DefaultRename
     InstQueue_normal LTP[Impl::MaxThreads];
     unsigned LTPMax;
   public:
+    InstQueue_normal secRenameQueue[Impl::MaxThreads];
+    int maxSecRename;
     void openLTP(ThreadID tid);
     void closeLTP(ThreadID tid);
     bool insertLTP(DynInstPtr &inst,ThreadID tid);
     bool wakeUpInst(DynInstPtr &inst);
     bool gateLTP[Impl::MaxThreads];
     bool getLTPStatus(ThreadID tid);
+    void renameWakeUpInsts(ThreadID tid);
+    int instsWakeNum;
 };
 
 #endif // __CPU_O3_RENAME_HH__

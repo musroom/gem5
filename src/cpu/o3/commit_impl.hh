@@ -1414,6 +1414,7 @@ DefaultCommit<Impl>::updateComInstStats(const DynInstPtr &inst)
         
         if(inst->depth >= 1) {
             decodeStage->urgInsert(inst, tid);
+            //std::cout<<"insert into  UIT from committed"<<std::endl;
         }
     }
 

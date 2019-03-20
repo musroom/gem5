@@ -90,6 +90,9 @@ DefaultRename<Impl>::DefaultRename(O3CPU *_cpu, DerivO3CPUParams *params)
         serializeOnNextInst[tid] = false;
         gateLTP[tid] = false;
     }
+    maxSecRename = 4;
+    instsWakeNum = 0;
+
 }
 
 template <class Impl>
@@ -277,6 +280,7 @@ DefaultRename<Impl>::clearStates(ThreadID tid)
 
     serializeOnNextInst[tid] = false;
     gateLTP[tid] = false;
+    
 }
 
 template <class Impl>
@@ -435,7 +439,9 @@ DefaultRename<Impl>::tick()
     bool status_change = false;
 
     toIEWIndex = 0;
-
+    
+    instsWakeNum = 0;//number of insts wake up these tick()
+    
     sortInsts();
 
     list<ThreadID>::iterator threads = activeThreads->begin();
@@ -448,8 +454,11 @@ DefaultRename<Impl>::tick()
         DPRINTF(Rename, "Processing [tid:%i]\n", tid);
 
         status_change = checkSignalsAndUpdate(tid) || status_change;
-
+        
+        renameWakeUpInsts(tid);
+        
         rename(status_change, tid);
+   
     }
 
     if (status_change) {
@@ -1523,7 +1532,219 @@ template <class Impl>
 bool
 DefaultRename<Impl>::wakeUpInst(DynInstPtr &inst)
 {
+    ThreadID tid = inst->threadNumber;
+    if(LTP[tid].empty() == true) {
+        std::cout<<"the LTP is empty cannot wakeup"<<std::endl;
+        return false;
+    }
+    DynInstPtr inst_top = LTP[tid].front();  
+    
+    if(inst->seqNum != inst_top->seqNum) return false;
+    
+    LTP[tid].pop();
+    secRenameQueue[tid].push(inst_top);
+    std::cout<<"waiting in wait up queue,tid: "<<tid<<std::endl;
     return true;
+   
 }
 
+template <class Impl>
+void
+DefaultRename<Impl>::renameWakeUpInsts(ThreadID tid)
+{
+    // rename instruction coming from LTP
+    int insts_avail = (int)secRenameQueue[tid].size();
+
+    // Check the decode queue to see if instructions are available.
+    // If there are no available instructions to rename, then do nothing.
+    if (insts_avail == 0) {
+        DPRINTF(Rename, "[tid:%u]: Rename wake up insts, Nothing to do, "
+            "breaking out early.\n",
+            tid);
+        return;
+    }
+
+    // Will have to do a different calculation for the number of free
+    // entries.
+    int free_rob_entries = calcFreeROBEntries(tid);
+    int free_iq_entries  = calcFreeIQEntries(tid);
+    int min_free_entries = free_rob_entries;
+
+    //FullSource source = ROB;
+
+    if (free_iq_entries < min_free_entries) {
+        min_free_entries = free_iq_entries;
+        //source = IQ;
+    }
+
+    // Check if there's any space left.
+    if (min_free_entries <= 0) {
+        DPRINTF(Rename, "[tid:%u]:  Rename wake up insts, Blocking due to no free ROB/IQ/ "
+                "entries.\n"
+                "ROB has %i free entries.\n"
+                "IQ has %i free entries.\n",
+                tid,
+                free_rob_entries,
+                free_iq_entries);
+        return;
+    } else if (min_free_entries < insts_avail) {
+        DPRINTF(Rename, "[tid:%u]: Will have to block this cycle."
+                "%i insts available, but only %i insts can be "
+                "renamed due to ROB/IQ/LSQ limits.\n",
+                tid, insts_avail, min_free_entries);
+
+        insts_avail = min_free_entries;
+
+    }
+
+    DPRINTF(Rename, "[tid:%u]: %i available wake up instructions to "
+        "send iew.\n", tid, insts_avail);
+
+
+    int renamed_insts = 0;
+
+    while (insts_avail > 0 &&  instsWakeNum < maxSecRename) {
+        DPRINTF(Rename, "[tid:%u]: Wake up insts. Sending instructions to IEW.\n", tid);
+
+        assert(!secRenameQueue[tid].empty());
+
+        DynInstPtr inst = secRenameQueue[tid].front();
+
+        //For all kind of instructions, check ROB and IQ first
+        //For load instruction, check LQ size and take into account the inflight loads
+        //For store instruction, check SQ size and take into account the inflight stores
+
+        if (inst->isLoad()) {
+            if (calcFreeLQEntries(tid) <= 0) {
+                DPRINTF(Rename, "[tid:%u]: Wake up insts.Cannot rename due to no free LQ\n");
+                //source = LQ;
+                //incrFullStat(source);
+                break;
+            }
+        }
+
+        if (inst->isStore() || inst->isAtomic()) {
+            if (calcFreeSQEntries(tid) <= 0) {
+                DPRINTF(Rename, "[tid:%u]: Wake up insts.Cannot rename due to no free SQ\n");
+                //source = SQ;
+                //incrFullStat(source);
+                break;
+            }
+        }
+
+
+        DPRINTF(Rename,"[tid:%u]: Removing [sn:%lli] PC:%s from wake up queue\n"
+                    "", tid, inst->seqNum, inst->pcState());
+
+        if (inst->isSquashed()) {
+            DPRINTF(Rename, "[tid:%u]: instruction %i with PC %s is "
+                    "squashed, skipping.when rename wake up instructions\n", 
+                    tid, inst->seqNum,inst->pcState());
+
+            secRenameQueue[tid].pop();
+            ++renameSquashedInsts;
+
+            // Decrement how many instructions are available.
+            --insts_avail;
+
+            continue;
+        }
+
+        DPRINTF(Rename, "[tid:%u]: Processing instruction [sn:%lli] with "
+                "PC %s.\n", tid, inst->seqNum, inst->pcState());
+
+        // Check here to make sure there are enough destination registers
+        // to rename to.  Otherwise block.
+        if (!renameMap[tid]->canRename(inst->numIntDestRegs(),
+                                       inst->numFPDestRegs(),
+                                       inst->numVecDestRegs(),
+                                       inst->numVecElemDestRegs(),
+                                       inst->numVecPredDestRegs(),
+                                       inst->numCCDestRegs())) {
+            DPRINTF(Rename, "Blocking due to lack of free "
+                    "physical registers to rename to.\n");
+
+            break;
+        }
+        secRenameQueue[tid].pop();
+         
+        // Handle serializeAfter/serializeBefore instructions.
+        // serializeAfter marks the next instruction as serializeBefore.
+        // serializeBefore makes the instruction wait in rename until the ROB
+        // is empty.
+
+        // In this model, IPR accesses are serialize before
+        // instructions, and store conditionals are serialize after
+        // instructions.  This is mainly due to lack of support for
+        // out-of-order operations of either of those classes of
+        // instructions.
+        /*if ((inst->isIprAccess() || inst->isSerializeBefore()) &&
+            !inst->isSerializeHandled()) {
+            DPRINTF(Rename, "Serialize before instruction encountered.\n");
+
+            if (!inst->isTempSerializeBefore()) {
+                renamedSerializing++;
+                inst->setSerializeHandled();
+            } else {
+                renamedTempSerializing++;
+            }*/
+
+            // Change status over to SerializeStall so that other stages know
+            // what this is blocked on.
+          /*  renameStatus[tid] = SerializeStall;
+
+            serializeInst[tid] = inst;
+
+            blockThisCycle = true;
+
+            break;
+        } else if ((inst->isStoreConditional() || inst->isSerializeAfter()) &&
+                   !inst->isSerializeHandled()) {
+            DPRINTF(Rename, "Serialize after instruction encountered.\n");
+
+            renamedSerializing++;
+
+            inst->setSerializeHandled();
+
+            serializeAfter(insts_to_rename, tid);
+        }
+        */
+        renameSrcRegs(inst, inst->threadNumber);
+
+        renameDestRegs(inst, inst->threadNumber);
+
+        if (inst->isAtomic() || inst->isStore()) {
+            storesInProgress[tid]++;
+        } else if (inst->isLoad()) {
+            loadsInProgress[tid]++;
+        }
+
+        ++renamed_insts;
+        // Notify potential listeners that source and destination registers for
+        // this instruction have been renamed.
+        ppRename->notify(inst);
+
+        // Put instruction in rename queue.
+        toIEW->insts[toIEWIndex] = inst;
+        ++(toIEW->size);
+
+        // Increment which instruction we're on.
+        ++toIEWIndex;
+       
+        //the number of wake up and rename instruction 
+        ++instsWakeNum;
+
+        // Decrement how many instructions are available.
+        --insts_avail;
+    }
+
+    instsInProgress[tid] += renamed_insts;
+    renameRenamedInsts += renamed_insts;
+
+    // If we wrote to the time buffer, record this.
+    if (toIEWIndex) {
+        wroteToTimeBuffer = true;
+    }
+
+}
 #endif//__CPU_O3_RENAME_IMPL_HH__

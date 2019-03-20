@@ -106,7 +106,7 @@ SimpleRenameMap::rename(const RegId& arch_reg,TheISA::PCState pc)
     return RenameInfo(renamed_reg, prev_reg);
 }
 
-
+ renameWakeUp
 /**** UnifiedRenameMap methods ****/
 
 void
