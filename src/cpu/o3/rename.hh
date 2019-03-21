@@ -547,6 +547,8 @@ class DefaultRename
     bool getLTPStatus(ThreadID tid);
     void renameWakeUpInsts(ThreadID tid);
     int instsWakeNum;
+    inline void renameDestRegsSec(const DynInstPtr &inst, ThreadID tid);
+
 };
 
 #endif // __CPU_O3_RENAME_HH__

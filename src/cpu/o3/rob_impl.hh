@@ -556,4 +556,17 @@ ROB<Impl>::findInst(ThreadID tid, InstSeqNum squash_inst)
     return NULL;
 }
 
+template <class Impl>
+bool
+ROB<Impl>::removeDupInst(ThreadID tid, DynInstPtr inst)
+{
+    for (InstIt it = instList[tid].begin(); it != instList[tid].end(); it++) {
+        if ((*it)->seqNum == inst->seqNum) {
+            *it = inst;
+            return true;         
+        }
+    }
+    return false;
+}
+
 #endif//__CPU_O3_ROB_IMPL_HH__

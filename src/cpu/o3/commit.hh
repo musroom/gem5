@@ -101,6 +101,7 @@ class DefaultCommit
     typedef typename CPUPol::IEW IEW;
     
     typedef typename CPUPol::Decode Decode;
+    typedef typename CPUPol::Rename Rename;
 
     typedef O3ThreadState<Impl> Thread;
 
@@ -521,9 +522,11 @@ class DefaultCommit
     Stats::Scalar commitEligibleSamples;
   public:
     void setDecodeStage(Decode *decode_stage);
+    void setRenameStage(Rename *rename_stage);
 
     /** The pointer to the decode stage. Used to fill UIT */
     Decode *decodeStage;
+    Rename *renameStage;
 
 };
 

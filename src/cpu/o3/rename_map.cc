@@ -106,7 +106,42 @@ SimpleRenameMap::rename(const RegId& arch_reg,TheISA::PCState pc)
     return RenameInfo(renamed_reg, prev_reg);
 }
 
- renameWakeUp
+
+SimpleRenameMap::RenameInfo
+SimpleRenameMap::renameWakeUp(const RegId& arch_reg)
+{
+    PhysRegIdPtr renamed_reg;
+    // Record the current physical register that is renamed to the
+    // requested architected register.
+    PhysRegIdPtr prev_reg;
+    if(extmap[arch_reg.flatIndex()].preg == NULL) {
+        prev_reg = secmap[arch_reg.flatIndex()];
+    } else {
+        prev_reg = extmap[arch_reg.flatIndex()].preg;
+    }
+
+    // If it's not referencing the zero register, then rename the
+    // register.
+    if (arch_reg != zeroReg) {
+        renamed_reg = freeList->getReg();
+        secmap[arch_reg.flatIndex()] = renamed_reg;
+
+    } else {
+        // Otherwise return the zero register so nothing bad happens.
+        assert(prev_reg->isZeroReg());
+        renamed_reg = prev_reg;
+    }
+
+    DPRINTF(Rename, "Renamed reg %d to physical reg %d (%d) old mapping was"
+            " %d (%d)\n",
+            arch_reg, renamed_reg->flatIndex(), renamed_reg->flatIndex(),
+            prev_reg->flatIndex(), prev_reg->flatIndex());
+
+    return RenameInfo(renamed_reg, prev_reg);
+}
+
+
+
 /**** UnifiedRenameMap methods ****/
 
 void

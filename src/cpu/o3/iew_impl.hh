@@ -651,7 +651,7 @@ DefaultIEW<Impl>::validInstsFromRename()
     unsigned inst_count = 0;
 
     for (int i=0; i<fromRename->size; i++) {
-        if (!fromRename->insts[i]->isSquashed())
+        if (!fromRename->insts[i]->isSquashed() && !fromRename->insts[i]->noNeedExe)
             inst_count++;
     }
 
@@ -848,7 +848,9 @@ DefaultIEW<Impl>::sortInsts()
         assert(insts[tid].empty());
 #endif
     for (int i = 0; i < insts_from_rename; ++i) {
+        if(fromRename->insts[i]->noNeedExe == true) continue;
         insts[fromRename->insts[i]->threadNumber].push(fromRename->insts[i]);
+        
     }
 }
 

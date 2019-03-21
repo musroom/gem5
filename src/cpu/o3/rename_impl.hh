@@ -639,7 +639,7 @@ DefaultRename<Impl>::renameInsts(ThreadID tid)
 
     int renamed_insts = 0;
 
-    while (insts_available > 0 &&  toIEWIndex < renameWidth) {
+    while (insts_available > 0 &&  toIEWIndex < renameWidth + instsWakeNum) {
         DPRINTF(Rename, "[tid:%u]: Sending instructions to IEW.\n", tid);
 
         assert(!insts_to_rename.empty());
@@ -1711,7 +1711,7 @@ DefaultRename<Impl>::renameWakeUpInsts(ThreadID tid)
         */
         renameSrcRegs(inst, inst->threadNumber);
 
-        renameDestRegs(inst, inst->threadNumber);
+        renameDestRegsSec(inst, inst->threadNumber);
 
         if (inst->isAtomic() || inst->isStore()) {
             storesInProgress[tid]++;
@@ -1723,7 +1723,8 @@ DefaultRename<Impl>::renameWakeUpInsts(ThreadID tid)
         // Notify potential listeners that source and destination registers for
         // this instruction have been renamed.
         ppRename->notify(inst);
-
+       
+        inst->noNeedExe = false;
         // Put instruction in rename queue.
         toIEW->insts[toIEWIndex] = inst;
         ++(toIEW->size);
@@ -1747,4 +1748,58 @@ DefaultRename<Impl>::renameWakeUpInsts(ThreadID tid)
     }
 
 }
+
+template <class Impl>
+inline void
+DefaultRename<Impl>::renameDestRegsSec(const DynInstPtr &inst, ThreadID tid)
+{
+    ThreadContext *tc = inst->tcBase();
+    RenameMap *map = renameMap[tid];
+    unsigned num_dest_regs = inst->numDestRegs();
+
+    // Rename the destination registers.
+    for (int dest_idx = 0; dest_idx < num_dest_regs; dest_idx++) {
+        const RegId& dest_reg = inst->destRegIdx(dest_idx);
+        typename RenameMap::RenameInfo rename_result;
+
+        RegId flat_dest_regid = tc->flattenRegId(dest_reg);
+
+        rename_result = map->renameWakeUp(flat_dest_regid);
+
+        inst->flattenDestReg(dest_idx, flat_dest_regid);
+
+        // Mark Scoreboard entry as not ready
+        scoreboard->unsetReg(rename_result.first);
+
+        DPRINTF(Rename, "[tid:%u]: Rename wake up.Renaming arch reg %i (%s) to physical "
+                "reg %i (%i).\n", tid, dest_reg.index(),
+                dest_reg.className(),
+                rename_result.first->index(),
+                rename_result.first->flatIndex());
+
+        // Record the rename information so that a history can be kept.
+        RenameHistory hb_entry(inst->seqNum, flat_dest_regid,
+                               rename_result.first,
+                               rename_result.second);
+
+        historyBuffer[tid].push_front(hb_entry);
+
+        DPRINTF(Rename, "[tid:%u]: Adding instruction to history buffer "
+                "(size=%i), [sn:%lli].\n",tid,
+                historyBuffer[tid].size(),
+                (*historyBuffer[tid].begin()).instSeqNum);
+
+        // Tell the instruction to rename the appropriate destination
+        // register (dest_idx) to the new physical register
+        // (rename_result.first), and record the previous physical
+        // register that the same logical register was renamed to
+        // (rename_result.second).
+        inst->renameDestReg(dest_idx,
+                            rename_result.first,
+                            rename_result.second);
+
+        ++renameRenamedOperands;
+    }
+}
+
 #endif//__CPU_O3_RENAME_IMPL_HH__

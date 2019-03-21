@@ -123,7 +123,7 @@ BaseO3DynInst<Impl>::initVars()
     storeTick = -1;
 #endif
     urgent = false;
-    park = false;
+    noNeedExe = false;
 }
 
 template <class Impl>

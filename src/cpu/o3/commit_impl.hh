@@ -1328,12 +1328,22 @@ DefaultCommit<Impl>::getInsts()
     DPRINTF(Commit, "Getting instructions from Rename stage.\n");
 
     // Read any renamed instructions and place them into the ROB.
-    int insts_to_process = std::min((int)renameWidth, fromRename->size);
+    int allrenamewidth = (int)renameWidth + renameStage->maxSecRename;
+    //std::cout<<"All rename width："<<allrenamewidth<<std::endl;
+    int insts_to_process = std::min(allrenamewidth, fromRename->size);
 
     for (int inst_num = 0; inst_num < insts_to_process; ++inst_num) {
         const DynInstPtr &inst = fromRename->insts[inst_num];
         ThreadID tid = inst->threadNumber;
+        
+        //update inst to get rename imformation
+        if(rob->removeDupInst(tid,inst) == true) {
+            std::cout<<"commit stage find dup inst in rob"<<std::endl;
+            continue;
+        }
+            
 
+        
         if (!inst->isSquashed() &&
             commitStatus[tid] != ROBSquashing &&
             commitStatus[tid] != TrapPending) {
@@ -1552,6 +1562,13 @@ void
 DefaultCommit<Impl>::setDecodeStage(Decode *decode_stage)
 {
     decodeStage = decode_stage;
+}
+
+template <class Impl>
+void
+DefaultCommit<Impl>::setRenameStage(Rename *rename_stage)
+{
+    renameStage = rename_stage;
 }
 
 #endif//__CPU_O3_COMMIT_IMPL_HH__

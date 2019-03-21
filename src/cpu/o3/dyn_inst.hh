@@ -134,8 +134,8 @@ class BaseO3DynInst : public BaseDynInst<Impl>
 #endif
     // is this instructioin uurgent
     bool urgent;
-    //just used to tell IEW this instruction is park or not 
-    bool park;
+    //just used to tell IEW this instruction need execute or not 
+    bool noNeedExe;
     /** Reads a misc. register, including any side-effects the read
      * might have as defined by the architecture.
      */
