@@ -934,6 +934,9 @@ DefaultCommit<Impl>::commit()
 
         // Try to commit any instructions.
         commitInsts();
+   
+        //wake up inst in execute 
+        wakeUpInsts()
     }
 
     //Check for any activity
@@ -1570,5 +1573,124 @@ DefaultCommit<Impl>::setRenameStage(Rename *rename_stage)
 {
     renameStage = rename_stage;
 }
+
+template <class Impl>
+void
+DefaultCommit<Impl>::wakeUpInstsAggressive()
+{
+    //wake up every active thread insts from top 
+
+    list<ThreadID>::iterator threads = activeThreads->begin();
+    list<ThreadID>::iterator end = activeThreads->end();
+     
+    bool back;
+    while (threads != end) {
+        ThreadID tid = *threads++;
+
+        if (!rob->isEmpty(tid)){
+            const DynInstPtr &head_inst = rob->readHeadInst(tid);
+            if(head_inst->urgent == true) {
+                for (InstIt it = rob->instList[tid].begin(); it != rob->instList[tid].end(); it++) {
+                    if ((*it)->urgent == false || (it == rob->instList[tid].begin() && (*it)->noNeedExe == true)){
+                        back = renameStage->wakeUpInst((*it)); 
+                        if(back == true) std::cout<<"in commit,success wakeup"<<std::endl;
+                        else std::cout<<"in commit,wake up failed the reason is upon"<<std::endl;
+                    }
+                    if((*it)->urgent == true && it != rob->instList[tid].begin()) break;
+                }
+            }
+        }
+    }
+}
+
+template <class Impl>
+void
+DefaultCommit<Impl>::wakeUpInsts()
+{
+    int wakeup_num = 0;
+    if((*head)->urgent == false) {
+        std::cout<<"wake up insts this cycle: "<<wakeup_num<<std::endl;
+        return;
+    }
+
+    list<ThreadID>::iterator threads = activeThreads->begin();
+    list<ThreadID>::iterator end = activeThreads->end();
+    vector<InstIt> point_vector;
+    bool back = false;
+    
+    //init vector
+    while (threads != end) {
+        ThreadID tid = *threads++;
+        if(rob->isEmpty(tid)) point_vector.push_back(rob->instList[tid].end());
+        else if((*head) == rob->instList[tid].begin()) {
+            InstIt it = rob->instList[tid].begin();
+            it++;
+            point_vector.push_back(it);
+        }else{
+            point_vector.push_back(rob->instList[tid].begin());
+        }
+    }
+ 
+    //if head in LTP wake up 
+    if((*head)->urgent == false || (*head)->noNeedExe == true) {
+        back = renameStage->wakeUpInst((*head));
+        if(back == true) {
+            std::cout<<"in commit,success wakeup seqNum:"<<(*head)->seqNum<<std::endl;
+            wakeup_num ++;
+        }else{
+            std::cout<<"in commit,wake up failed the reason is upon seqNum:"<<(*head)->seqNum<<std::endl;
+        }
+    }
+
+    int index = 0;
+    int min_index = 0;
+    bool first_valid = true;
+    InstSeqNum lowest_num = 0;
+    while(1) {
+        index = 0;
+        min_index = 0;
+        first_valid = true;
+        lowest_num = 0;
+
+        while(thread != end){
+            ThreadID tid = *threads++;
+            if(rob->isEmpty(tid)){
+                index ++;
+                continue;
+            }
+            if(first_valid) {
+                min_index = index;
+                first_valid = false;
+                lowest_num = (*point_vector[index])->seqNum;
+                index ++;
+                continue
+            }
+        
+            DynInstPtr temp_inst = (*(point_vector[index])); 
+            if(temp->seqNum < lowest_num) {
+                min_index = index;
+                lowest_num = temp->seqNum;
+            }
+            index++;
+        }
+        DynInstPtr temp_inst1 = (*(point_vector[min_index]));
+
+        if(first_valid == true) break;
+        
+        if(tmep_inst1->urgent == true) break;
+        
+        back = renameStage->wakeUpInst(temp_inst1);
+        if(back == true) {
+            std::cout<<"in commit,success wakeup seqNum:"<<(*head)->seqNum<<std::endl;
+            wakeup_num ++;
+        }else{
+            std::cout<<"in commit,wake up failed the reason is upon seqNum:"<<(*head)->seqNum<<std::endl;
+        }
+        point_vector[min_index] ++;
+
+    }
+    std::cout<<"wake up insts this cycle: "<<wakeup_num<<std::endl;
+    return;
+} 
 
 #endif//__CPU_O3_COMMIT_IMPL_HH__

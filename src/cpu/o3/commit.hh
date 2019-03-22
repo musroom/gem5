@@ -104,7 +104,7 @@ class DefaultCommit
     typedef typename CPUPol::Rename Rename;
 
     typedef O3ThreadState<Impl> Thread;
-
+    typedef typename std::list<DynInstPtr>::iterator InstIt;
     /** Overall commit status. Used to determine if the CPU can deschedule
      * itself due to a lack of activity.
      */
@@ -523,7 +523,7 @@ class DefaultCommit
   public:
     void setDecodeStage(Decode *decode_stage);
     void setRenameStage(Rename *rename_stage);
-
+    void wakeUpInsts();
     /** The pointer to the decode stage. Used to fill UIT */
     Decode *decodeStage;
     Rename *renameStage;

@@ -563,6 +563,7 @@ ROB<Impl>::removeDupInst(ThreadID tid, DynInstPtr inst)
     for (InstIt it = instList[tid].begin(); it != instList[tid].end(); it++) {
         if ((*it)->seqNum == inst->seqNum) {
             *it = inst;
+            inst->setInROB();
             return true;         
         }
     }
