@@ -118,8 +118,10 @@ InstructionQueue<Impl>::InstructionQueue(O3CPU *cpu_ptr, IEW *iew_ptr,
     for (ThreadID tid = 0; tid < Impl::MaxThreads; tid++) {
         memDepUnit[tid].init(params, tid);
         memDepUnit[tid].setIQ(this);
+        memDepUnit[tid].setCPU(cpu_ptr);
     }
-
+    
+    //set cpu
     resetState();
 
     //Figure out resource sharing policy

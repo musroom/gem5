@@ -523,6 +523,7 @@ class DefaultCommit
   public:
     void setDecodeStage(Decode *decode_stage);
     void setRenameStage(Rename *rename_stage);
+    void wakeUpInstsAggressive();
     void wakeUpInsts();
     /** The pointer to the decode stage. Used to fill UIT */
     Decode *decodeStage;

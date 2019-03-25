@@ -86,6 +86,7 @@ class MemDepUnit
   public:
     typedef typename Impl::DynInstPtr DynInstPtr;
     typedef typename Impl::DynInstConstPtr DynInstConstPtr;
+    typedef typename Impl::O3CPU O3CPU;
 
     /** Empty constructor. Must call init() prior to using in this case. */
     MemDepUnit();
@@ -282,6 +283,11 @@ class MemDepUnit
     Stats::Scalar conflictingLoads;
     /** Stat for number of conflicting stores that had to wait for a store. */
     Stats::Scalar conflictingStores;
+  public:
+     /** Pointer to the CPU. */
+    O3CPU *cpu;
+     /** Sets the pointer to the cpu. */
+    void setCPU(O3CPU *cpu_ptr);
 };
 
 #endif // __CPU_O3_MEM_DEP_UNIT_HH__

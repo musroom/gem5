@@ -936,7 +936,7 @@ DefaultCommit<Impl>::commit()
         commitInsts();
    
         //wake up inst in execute 
-        wakeUpInsts()
+        wakeUpInsts();
     }
 
     //Check for any activity
@@ -1608,8 +1608,10 @@ void
 DefaultCommit<Impl>::wakeUpInsts()
 {
     int wakeup_num = 0;
-    if((*head)->urgent == false) {
-        std::cout<<"wake up insts this cycle: "<<wakeup_num<<std::endl;
+    if(rob->isEmpty()) return;
+
+    if((*(rob->head))->urgent == false) {
+        DPRINTF(Commit, "Don't wake up insts this cycle");
         return;
     }
 
@@ -1622,7 +1624,7 @@ DefaultCommit<Impl>::wakeUpInsts()
     while (threads != end) {
         ThreadID tid = *threads++;
         if(rob->isEmpty(tid)) point_vector.push_back(rob->instList[tid].end());
-        else if((*head) == rob->instList[tid].begin()) {
+        else if((*(rob->head))->seqNum == (*(rob->instList[tid].begin()))->seqNum) {
             InstIt it = rob->instList[tid].begin();
             it++;
             point_vector.push_back(it);
@@ -1632,64 +1634,72 @@ DefaultCommit<Impl>::wakeUpInsts()
     }
  
     //if head in LTP wake up 
-    if((*head)->urgent == false || (*head)->noNeedExe == true) {
-        back = renameStage->wakeUpInst((*head));
+    if((*(rob->head))->urgent == false || (*(rob->head))->noNeedExe == true) {
+        back = renameStage->wakeUpInst((*(rob->head)));
         if(back == true) {
-            std::cout<<"in commit,success wakeup seqNum:"<<(*head)->seqNum<<std::endl;
+            DPRINTF(Commit,"in commit,success wake up head seqNum[sn:%lli]"
+                ".\n", (*(rob->head))->seqNum);
             wakeup_num ++;
         }else{
-            std::cout<<"in commit,wake up failed the reason is upon seqNum:"<<(*head)->seqNum<<std::endl;
+            DPRINTF(Commit, "in commit,wake up head failed the reason is upon "
+                "inst [sn:%lli]\n",(*(rob->head))->seqNum);
+
         }
     }
 
     int index = 0;
     int min_index = 0;
     bool first_valid = true;
+    list<ThreadID>::iterator iter;
     InstSeqNum lowest_num = 0;
     while(1) {
-        index = 0;
         min_index = 0;
         first_valid = true;
         lowest_num = 0;
 
-        while(thread != end){
-            ThreadID tid = *threads++;
+        for(index = 0,iter = activeThreads->begin();index<point_vector.size()&&iter!=activeThreads->end();
+            index ++,iter++){
+            ThreadID tid = *iter;
             if(rob->isEmpty(tid)){
-                index ++;
                 continue;
             }
+            
+            if(point_vector[index] == rob->instList[tid].end()) continue;
+
             if(first_valid) {
                 min_index = index;
                 first_valid = false;
-                lowest_num = (*point_vector[index])->seqNum;
-                index ++;
-                continue
+                lowest_num = (*(point_vector[index]))->seqNum;
+                continue;
             }
         
-            DynInstPtr temp_inst = (*(point_vector[index])); 
-            if(temp->seqNum < lowest_num) {
+            DynInstPtr temp_inst = *(point_vector[index]); 
+            if(temp_inst->seqNum < lowest_num) {
                 min_index = index;
-                lowest_num = temp->seqNum;
+                lowest_num = temp_inst->seqNum;
             }
-            index++;
         }
-        DynInstPtr temp_inst1 = (*(point_vector[min_index]));
-
         if(first_valid == true) break;
         
-        if(tmep_inst1->urgent == true) break;
+        DynInstPtr temp_inst1 = *(point_vector[min_index]);
+
+        
+        if(temp_inst1->urgent == true) break;
         
         back = renameStage->wakeUpInst(temp_inst1);
         if(back == true) {
-            std::cout<<"in commit,success wakeup seqNum:"<<(*head)->seqNum<<std::endl;
+            DPRINTF(Commit,"in commit,success wake up seqNum[sn:%lli]"
+                ".\n", temp_inst1->seqNum);
             wakeup_num ++;
         }else{
-            std::cout<<"in commit,wake up failed the reason is upon seqNum:"<<(*head)->seqNum<<std::endl;
+            DPRINTF(Commit, "in commit,wake up failed the reason is upon "
+                "inst [sn:%lli]\n",temp_inst1->seqNum);
+
         }
         point_vector[min_index] ++;
 
     }
-    std::cout<<"wake up insts this cycle: "<<wakeup_num<<std::endl;
+    DPRINTF(Commit, "wake up insts this cycle:\n",wakeup_num);
     return;
 } 
 

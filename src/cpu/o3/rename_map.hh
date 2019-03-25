@@ -210,6 +210,36 @@ class SimpleRenameMap
     }
 
     RenameInfo renameWakeUp(const RegId& arch_reg);
+    
+    PhysRegIdPtr lookupParkBit(const RegId& arch_reg) const
+    {
+        assert(arch_reg.flatIndex() <= extmap.size());
+        assert(arch_reg.flatIndex() <= secmap.size());
+
+        return extmap[arch_reg.flatIndex()].parkBit;
+        
+    }
+
+    PhysRegIdPtr setParkBit(const RegId& arch_reg) 
+    {
+        assert(arch_reg.flatIndex() <= extmap.size());
+        assert(arch_reg.flatIndex() <= secmap.size());
+
+        extmap[arch_reg.flatIndex()].parkBit = true;
+        return true;
+
+    }
+
+    PhysRegIdPtr setPC(const RegId& arch_reg,TheISA::PCState pc) 
+    {
+        assert(arch_reg.flatIndex() <= extmap.size());
+        assert(arch_reg.flatIndex() <= secmap.size());
+
+        extmap[arch_reg.flatIndex()].pc = pc;
+        return true;
+
+    }
+
 };
 
 /**
@@ -522,6 +552,109 @@ class UnifiedRenameMap
                   arch_reg.className());
         }
     }
+   
+    PhysRegIdPtr lookupParkBit(const RegId& arch_reg) const
+    {
+        switch (arch_reg.classValue()) {
+          case IntRegClass:
+            return intMap.lookupParkBit(arch_reg);
+
+          case FloatRegClass:
+            return  floatMap.lookupParkBit(arch_reg);
+
+          case VecRegClass:
+            assert(vecMode == Enums::Full);
+            return  vecMap.lookupParkBit(arch_reg);
+
+          case VecElemClass:
+            assert(vecMode == Enums::Elem);
+            return  vecElemMap.lookupParkBit(arch_reg);
+
+          case VecPredRegClass:
+            return predMap.lookupParkBit(arch_reg);
+
+          case CCRegClass:
+            return ccMap.lookupParkBit(arch_reg);
+
+          case MiscRegClass:
+            // misc regs aren't really renamed, they keep the same
+            // mapping throughout the execution.
+            return false;
+
+          default:
+            panic("rename lookupParkBit(): unknown reg class %s\n",
+                  arch_reg.className());
+        }
+    }
+  
+    bool setParkBit(const RegId& arch_reg) 
+    {
+        switch (arch_reg.classValue()) {
+          case IntRegClass:
+            return intMap.setParkBit(arch_reg);
+
+          case FloatRegClass:
+            return  floatMap.setParkBit(arch_reg);
+
+          case VecRegClass:
+            assert(vecMode == Enums::Full);
+            return  vecMap.setParkBit(arch_reg);
+
+          case VecElemClass:
+            assert(vecMode == Enums::Elem);
+            return  vecElemMap.setParkBit(arch_reg);
+
+          case VecPredRegClass:
+            return predMap.setParkBit(arch_reg);
+
+          case CCRegClass:
+            return ccMap.setParkBit(arch_reg);
+
+          case MiscRegClass:
+            // misc regs aren't really renamed, they keep the same
+            // mapping throughout the execution.
+            return false;
+
+          default:
+            panic("rename lookupParkBit(): unknown reg class %s\n",
+                  arch_reg.className());
+        }
+    }
+
+    bool setPC(const RegId& arch_reg,TheISA::PCState pc)
+    {
+        switch (arch_reg.classValue()) {
+          case IntRegClass:
+            return intMap.setPC(arch_reg,pc);
+
+          case FloatRegClass:
+            return  floatMap.setPC(arch_reg,pc);
+
+          case VecRegClass:
+            assert(vecMode == Enums::Full);
+            return  vecMap.setPC(arch_reg,pc);
+
+          case VecElemClass:
+            assert(vecMode == Enums::Elem);
+            return  vecElemMap.setPC(arch_reg,pc);
+
+          case VecPredRegClass:
+            return predMap.setPC(arch_reg,pc);
+
+          case CCRegClass:
+            return ccMap.setPC(arch_reg,pc);
+
+          case MiscRegClass:
+            // misc regs aren't really renamed, they keep the same
+            // mapping throughout the execution.
+            return false;
+
+          default:
+            panic("rename setPC(): unknown reg class %s\n",
+                  arch_reg.className());
+        }
+    }
+
 
 
 };

@@ -230,6 +230,10 @@ MemDepUnit<MemDepPred, Impl>::insert(const DynInstPtr &inst)
             moveToReady(inst_entry);
         }
     } else {
+        //have load after store,store as urgent
+        cpu->decode.urgInsert(store_entry->inst,tid);
+        
+   
         // Otherwise make the instruction dependent on the store/barrier.
         DPRINTF(MemDepUnit, "Adding to dependency list; "
                 "inst PC %s is dependent on [sn:%lli].\n",
@@ -610,6 +614,13 @@ MemDepUnit<MemDepPred, Impl>::dumpLists()
 #ifdef DEBUG
     cprintf("Memory dependence entries: %i\n", MemDepEntry::memdep_count);
 #endif
+}
+
+template <class MemDepPred, class Impl>
+void
+MemDepUnit<MemDepPred, Impl>::setCPU(O3CPU *cpu_ptr)
+{
+    cpu = cpu_ptr;
 }
 
 #endif//__CPU_O3_MEM_DEP_UNIT_IMPL_HH__

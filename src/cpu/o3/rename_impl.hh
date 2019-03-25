@@ -748,9 +748,30 @@ DefaultRename<Impl>::renameInsts(ThreadID tid)
 
             serializeAfter(insts_to_rename, tid);
         }
+        
+        
+        if(gateLTP[tid] == true && (inst->urgent == false || findSrcParkBit(inst) == true)){
+             //write in to RAT :set pc and set park bit in Rat
+            fillInRAT(inst);            
+             //insert into LTP
+            insertLTP(inst,tid);
+             
+             //set NoneedExe 
+            inst->noNeedExe = true;
 
+            toIEW->insts[toIEWIndex] = inst;
+            ++(toIEW->size);
+
+            // Increment which instruction we're on.
+            ++toIEWIndex;
+            --insts_available;
+            break;
+
+ 
+             
+        }
         renameSrcRegs(inst, inst->threadNumber);
-
+  
         renameDestRegs(inst, inst->threadNumber);
 
         if (inst->isAtomic() || inst->isStore()) {
@@ -1534,7 +1555,8 @@ DefaultRename<Impl>::wakeUpInst(DynInstPtr &inst)
 {
     ThreadID tid = inst->threadNumber;
     if(LTP[tid].empty() == true) {
-        std::cout<<"the LTP is empty cannot wakeup"<<std::endl;
+        DPRINTF(Rename, "the LTP is empty cannot wakeup.\n");
+     
         return false;
     }
     DynInstPtr inst_top = LTP[tid].front();  
@@ -1543,7 +1565,8 @@ DefaultRename<Impl>::wakeUpInst(DynInstPtr &inst)
     
     LTP[tid].pop();
     secRenameQueue[tid].push(inst_top);
-    std::cout<<"waiting in wait up queue,tid: "<<tid<<std::endl;
+    DPRINTF(Rename, "[tid:%u]:waiting in wait up queue.\n",tid);
+
     return true;
    
 }
@@ -1801,5 +1824,52 @@ DefaultRename<Impl>::renameDestRegsSec(const DynInstPtr &inst, ThreadID tid)
         ++renameRenamedOperands;
     }
 }
+
+template <class Impl>
+bool
+DefaultRename<Impl>::findSrcParkBit(DynInstPtr &inst)
+{
+    ThreadID tid = inst->threadNum;
+    ThreadContext *tc = inst->tcBase();
+    RenameMap *map = renameMap[tid];
+    unsigned num_src_regs = inst->numSrcRegs();
+
+    // Get the architectual register numbers from the source and
+    // operands, and redirect them to the right physical register.
+    for (int src_idx = 0; src_idx < num_src_regs; src_idx++) {
+        const RegId& src_reg = inst->srcRegIdx(src_idx);
+        PhysRegIdPtr renamed_reg;
+
+        if(true == map->lookupParkBit(tc->flattenRegId(src_reg)) {
+            return true;
+            break;
+        }
+    }
+    return false;
+}
+
+template <class Impl>
+bool
+DefaultRename<Impl>::fillInRAT(DynInstPtr &inst)
+{
+    ThreadContext *tc = inst->tcBase();
+    ThreadID tid = inst->threadNum;
+    RenameMap *map = renameMap[tid];
+    unsigned num_dest_regs = inst->numDestRegs();
+    bool result_set = true;
+    // Set pc ans Park BIT
+    for (int dest_idx = 0; dest_idx < num_dest_regs; dest_idx++) {
+        const RegId& dest_reg = inst->destRegIdx(dest_idx);
+
+        RegId flat_dest_regid = tc->flattenRegId(dest_reg);
+
+        result_set = map->setPC(flat_dest_regid,inst->pcState());
+        result_set = result_set || map->setParkBit(flat_dest_regid);
+    }
+    
+}
+
+
+
 
 #endif//__CPU_O3_RENAME_IMPL_HH__
