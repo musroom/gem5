@@ -211,7 +211,7 @@ class SimpleRenameMap
 
     RenameInfo renameWakeUp(const RegId& arch_reg);
     
-    PhysRegIdPtr lookupParkBit(const RegId& arch_reg) const
+    bool lookupParkBit(const RegId& arch_reg) const
     {
         assert(arch_reg.flatIndex() <= extmap.size());
         assert(arch_reg.flatIndex() <= secmap.size());
@@ -220,7 +220,7 @@ class SimpleRenameMap
         
     }
 
-    PhysRegIdPtr setParkBit(const RegId& arch_reg) 
+    bool setParkBit(const RegId& arch_reg) 
     {
         assert(arch_reg.flatIndex() <= extmap.size());
         assert(arch_reg.flatIndex() <= secmap.size());
@@ -230,7 +230,7 @@ class SimpleRenameMap
 
     }
 
-    PhysRegIdPtr setPC(const RegId& arch_reg,TheISA::PCState pc) 
+    bool setPC(const RegId& arch_reg,TheISA::PCState pc) 
     {
         assert(arch_reg.flatIndex() <= extmap.size());
         assert(arch_reg.flatIndex() <= secmap.size());
@@ -553,10 +553,11 @@ class UnifiedRenameMap
         }
     }
    
-    PhysRegIdPtr lookupParkBit(const RegId& arch_reg) const
+    bool lookupParkBit(const RegId& arch_reg) const
     {
         switch (arch_reg.classValue()) {
           case IntRegClass:
+
             return intMap.lookupParkBit(arch_reg);
 
           case FloatRegClass:

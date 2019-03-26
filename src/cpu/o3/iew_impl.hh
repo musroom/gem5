@@ -843,12 +843,18 @@ void
 DefaultIEW<Impl>::sortInsts()
 {
     int insts_from_rename = fromRename->size;
+    //std::cout<<"in iew ,inst_from_rename size:"<<insts_from_rename<<std::endl;
 #ifdef DEBUG
     for (ThreadID tid = 0; tid < numThreads; tid++)
         assert(insts[tid].empty());
 #endif
     for (int i = 0; i < insts_from_rename; ++i) {
-        if(fromRename->insts[i]->noNeedExe == true) continue;
+        //std::cout<<"in iew ";
+        //fromRename->insts[i]->dump();
+        if(fromRename->insts[i]->noNeedExe == true) {
+            toRename->iewInfo[fromRename->insts[i]->threadNumber].noNeedExeCount++;   
+            continue;
+        }
         insts[fromRename->insts[i]->threadNumber].push(fromRename->insts[i]);
         
     }

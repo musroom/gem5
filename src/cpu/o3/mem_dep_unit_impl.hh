@@ -231,8 +231,10 @@ MemDepUnit<MemDepPred, Impl>::insert(const DynInstPtr &inst)
         }
     } else {
         //have load after store,store as urgent
+        store_entry->inst->urgent = true;
+        cpu->rename.setParkInRAT(store_entry->inst);
         cpu->decode.urgInsert(store_entry->inst,tid);
-        
+         
    
         // Otherwise make the instruction dependent on the store/barrier.
         DPRINTF(MemDepUnit, "Adding to dependency list; "

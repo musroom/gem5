@@ -1334,14 +1334,16 @@ DefaultCommit<Impl>::getInsts()
     int allrenamewidth = (int)renameWidth + renameStage->maxSecRename;
     //std::cout<<"All rename width："<<allrenamewidth<<std::endl;
     int insts_to_process = std::min(allrenamewidth, fromRename->size);
-
+    DPRINTF(Commit,"inst to process: %d,allrenamewidth:%d,fromRename->size:%d",insts_to_process,allrenamewidth,fromRename->size);
     for (int inst_num = 0; inst_num < insts_to_process; ++inst_num) {
         const DynInstPtr &inst = fromRename->insts[inst_num];
         ThreadID tid = inst->threadNumber;
-        
+        //std::cout<<"cout inst in getInsts"<<std::endl;
+        //inst->dump();
         //update inst to get rename imformation
-        if(rob->removeDupInst(tid,inst) == true) {
-            std::cout<<"commit stage find dup inst in rob"<<std::endl;
+        if(rob->isInserted(tid,inst) == true) {
+            DPRINTF(Commit,"commit stage find dup inst in rob,"
+                "instruction %i with PC %s",inst->seqNum,inst->pcState());
             continue;
         }
             

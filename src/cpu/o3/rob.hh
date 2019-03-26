@@ -332,7 +332,7 @@ class ROB
     // The number of rob_writes
     Stats::Scalar robWrites;
   public:
-    bool removeDupInst(ThreadID tid, DynInstPtr inst);
+    bool isInserted(ThreadID tid, const DynInstPtr& inst);
 };
 
 #endif //__CPU_O3_ROB_HH__

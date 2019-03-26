@@ -1,66 +1,10 @@
-scons: Reading SConscript files ...
-Warning: Your compiler doesn't support incremental linking and lto at the same time, so lto is being disabled. To force lto on anyway, use the --force-lto option. That will disable partial linking.
-Warning: Protocol buffer compiler (protoc) not found.
-         Please install protobuf-compiler for tracing support.
-Checking for C header file Python.h... (cached) yes
-Checking for C library python2.7... (cached) yes
-Checking for C library pthread... (cached) yes
-Checking for C library dl... (cached) yes
-Checking for C library util... (cached) yes
-Checking for C library m... (cached) yes
-Checking for accept(0,0,0) in C++ library None... (cached) yes
-Checking for zlibVersion() in C++ library z... (cached) yes
-Checking for C header file valgrind/valgrind.h... (cached) yes
-Checking for clock_nanosleep(0,0,NULL,NULL) in C library None... (cached) yes
-Checking for timer_create(CLOCK_MONOTONIC, NULL, NULL) in C library None... (cached) no
-Checking for timer_create(CLOCK_MONOTONIC, NULL, NULL) in C library rt... (cached) yes
-Checking for C library tcmalloc... (cached) yes
-Checking for char temp; backtrace_symbols_fd((void*)&temp, 0, 0) in C library None... (cached) yes
-Checking for C header file fenv.h... (cached) yes
-Checking for C header file png.h... (cached) yes
-Checking for C header file linux/kvm.h... (cached) yes
-Checking for C header file linux/if_tun.h... (cached) yes
-Checking size of struct kvm_xsave ... (cached) yes
-Checking for member exclude_host in struct perf_event_attr...(cached) yes
-Checking whether __i386__ is declared... (cached) no
-Checking whether __x86_64__ is declared... (cached) yes
-Building in /home/futianyi/gem5/gem5/build/X86
-Using saved variables file /home/futianyi/gem5/gem5/build/variables/X86
-scons: done reading SConscript files.
-scons: Building targets ...
- [VER TAGS]  -> X86/sim/tags.cc
- [     CXX] X86/cpu/o3/commit.cc -> .o
-scons: building terminated because of errors.
-scons: Reading SConscript files ...
-Warning: Your compiler doesn't support incremental linking and lto at the same time, so lto is being disabled. To force lto on anyway, use the --force-lto option. That will disable partial linking.
-Warning: Protocol buffer compiler (protoc) not found.
-         Please install protobuf-compiler for tracing support.
-Checking for C header file Python.h... (cached) yes
-Checking for C library python2.7... (cached) yes
-Checking for C library pthread... (cached) yes
-Checking for C library dl... (cached) yes
-Checking for C library util... (cached) yes
-Checking for C library m... (cached) yes
-Checking for accept(0,0,0) in C++ library None... (cached) yes
-Checking for zlibVersion() in C++ library z... (cached) yes
-Checking for C header file valgrind/valgrind.h... (cached) yes
-Checking for clock_nanosleep(0,0,NULL,NULL) in C library None... (cached) yes
-Checking for timer_create(CLOCK_MONOTONIC, NULL, NULL) in C library None... (cached) no
-Checking for timer_create(CLOCK_MONOTONIC, NULL, NULL) in C library rt... (cached) yes
-Checking for C library tcmalloc... (cached) yes
-Checking for char temp; backtrace_symbols_fd((void*)&temp, 0, 0) in C library None... (cached) yes
-Checking for C header file fenv.h... (cached) yes
-Checking for C header file png.h... (cached) yes
-Checking for C header file linux/kvm.h... (cached) yes
-Checking for C header file linux/if_tun.h... (cached) yes
-Checking size of struct kvm_xsave ... (cached) yes
-Checking for member exclude_host in struct perf_event_attr...(cached) yes
-Checking whether __i386__ is declared... (cached) no
-Checking whether __x86_64__ is declared... (cached) yes
-Building in /home/futianyi/gem5/gem5/build/X86
-Using saved variables file /home/futianyi/gem5/gem5/build/variables/X86
-scons: done reading SConscript files.
-scons: Building targets ...
- [VER TAGS]  -> X86/sim/tags.cc
- [     CXX] X86/cpu/o3/commit.cc -> .o
-scons: building terminated because of errors.
+gem5 Simulator System.  http://gem5.org
+gem5 is copyrighted software; use the --copyright option for details.
+
+gem5 compiled Mar 26 2019 22:52:35
+gem5 started Mar 26 2019 22:55:04
+gem5 executing on mprc-R730, pid 16387
+command line: build/X86/gem5.opt --debug-flags=O3CPUAll --debug-start=30000 --debug-file=traceo3v1.out configs/example/se.py -c tests/test-progs/hello/bin/x86/linux/hello --cpu-type=DerivO3CPU --caches
+
+Global frequency set at 1000000000000 ticks per second
+**** REAL SIMULATION ****

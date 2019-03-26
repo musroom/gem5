@@ -558,12 +558,17 @@ ROB<Impl>::findInst(ThreadID tid, InstSeqNum squash_inst)
 
 template <class Impl>
 bool
-ROB<Impl>::removeDupInst(ThreadID tid, DynInstPtr inst)
+ROB<Impl>::isInserted(ThreadID tid, const DynInstPtr& inst)
 {
+    //inst->dump(); 
     for (InstIt it = instList[tid].begin(); it != instList[tid].end(); it++) {
         if ((*it)->seqNum == inst->seqNum) {
-            *it = inst;
-            inst->setInROB();
+            //inst->dump();
+            //(*it)->dump();
+            //std::cout<<inst->isInROB()<<std::endl;
+            //std::cout<<(*it)->isInROB()<<std::endl;
+            //*it = inst;
+            //inst->setInROB();
             return true;         
         }
     }

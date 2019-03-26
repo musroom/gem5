@@ -181,7 +181,7 @@ struct DefaultRenameDefaultIEW {
 
     int size;
 
-    DynInstPtr insts[Impl::MaxWidth];
+    DynInstPtr insts[Impl::MaxWidth + Impl::MaxWidth/2];
 };
 
 /** Struct that defines the information passed from IEW to commit. */
@@ -251,6 +251,9 @@ struct TimeBufStruct {
         unsigned dispatched;
         bool usedIQ;
         bool usedLSQ;
+        
+        //recode the instruction sent to rob without execute
+        unsigned noNeedExeCount;
     };
 
     iewComm iewInfo[Impl::MaxThreads];

@@ -1142,11 +1142,12 @@ LSQUnit<Impl>::setLTP(Cycles curCycle,uint8_t depth,ThreadID tid)
     }
     
     if(old_sta != sta) {
-        //if(sta == true) renameStage->openLTP(tid);
-        if(sta == true) renameStage->closeLTP(tid);
+        if(sta == true) renameStage->openLTP(tid);
+        //if(sta == true) renameStage->closeLTP(tid);
         else renameStage->closeLTP(tid);
     }
     
+    DPRINTF(LSQUnit, "Timer value %d,LTP status\n",timer,sta);
     //std::cout<<"Timer: "<<timer<<" "<<"status: "<<sta<<std::endl;
 }
     

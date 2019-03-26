@@ -375,10 +375,13 @@ class DefaultRename
     /** Pointer to the scoreboard. */
     Scoreboard *scoreboard;
 
-    /** Count of instructions in progress that have been sent off to the IQ
+    /** have deleted: Count of instructions in progress that have been sent off to the IQ
      * and ROB, but are not yet included in their occupancy counts.
      */
-    int instsInProgress[Impl::MaxThreads];
+    /** count of instructions to progress that have been sent off to the ROB*/
+    int toRobInProgress[Impl::MaxThreads];
+    /**count of instructions to progress that have been sent off to the IQ*/
+    int toIQInProgress[Impl::MaxThreads];
 
     /** Count of Load instructions in progress that have been sent off to the IQ
      * and ROB, but are not yet included in their occupancy counts.
@@ -548,7 +551,9 @@ class DefaultRename
     void renameWakeUpInsts(ThreadID tid);
     int instsWakeNum;
     inline void renameDestRegsSec(const DynInstPtr &inst, ThreadID tid);
-
+    bool setParkInRAT(DynInstPtr &inst);
+    bool findSrcParkBit(DynInstPtr &inst);
+    bool fillInRAT(DynInstPtr &inst);
 };
 
 #endif // __CPU_O3_RENAME_HH__

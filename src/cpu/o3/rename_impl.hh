@@ -80,7 +80,8 @@ DefaultRename<Impl>::DefaultRename(O3CPU *_cpu, DerivO3CPUParams *params)
     for (uint32_t tid = 0; tid < Impl::MaxThreads; tid++) {
         renameStatus[tid] = Idle;
         renameMap[tid] = nullptr;
-        instsInProgress[tid] = 0;
+        toIQInProgress[tid] = 0;
+        toRobInProgress[tid] = 0;
         loadsInProgress[tid] = 0;
         storesInProgress[tid] = 0;
         freeEntries[tid] = {0, 0, 0, 0};
@@ -273,8 +274,9 @@ DefaultRename<Impl>::clearStates(ThreadID tid)
 
     stalls[tid].iew = false;
     serializeInst[tid] = NULL;
-
-    instsInProgress[tid] = 0;
+    
+    toRobInProgress[tid] = 0;
+    toIQInProgress[tid] = 0;
     loadsInProgress[tid] = 0;
     storesInProgress[tid] = 0;
 
@@ -305,7 +307,8 @@ DefaultRename<Impl>::resetStage()
         stalls[tid].iew = false;
         serializeInst[tid] = NULL;
 
-        instsInProgress[tid] = 0;
+        toIQInProgress[tid] = 0;
+        toRobInProgress[tid] = 0;
         loadsInProgress[tid] = 0;
         storesInProgress[tid] = 0;
 
@@ -348,7 +351,7 @@ bool
 DefaultRename<Impl>::isDrained() const
 {
     for (ThreadID tid = 0; tid < numThreads; tid++) {
-        if (instsInProgress[tid] != 0 ||
+        if (toIQInProgress[tid] != 0 ||
             !historyBuffer[tid].empty() ||
             !skidBuffer[tid].empty() ||
             !insts[tid].empty() ||
@@ -373,7 +376,8 @@ DefaultRename<Impl>::drainSanityCheck() const
         assert(historyBuffer[tid].empty());
         assert(insts[tid].empty());
         assert(skidBuffer[tid].empty());
-        assert(instsInProgress[tid] == 0);
+        assert(toIQInProgress[tid] == 0);
+        assert(toRobInProgress[tid] == 0);
     }
 }
 
@@ -487,12 +491,14 @@ DefaultRename<Impl>::tick()
 
     // @todo: make into updateProgress function
     for (ThreadID tid = 0; tid < numThreads; tid++) {
-        instsInProgress[tid] -= fromIEW->iewInfo[tid].dispatched;
+        toIQInProgress[tid] -= fromIEW->iewInfo[tid].dispatched;
+        toRobInProgress[tid] -= (fromIEW->iewInfo[tid].dispatched + fromIEW->iewInfo[tid].noNeedExeCount);
         loadsInProgress[tid] -= fromIEW->iewInfo[tid].dispatchedToLQ;
         storesInProgress[tid] -= fromIEW->iewInfo[tid].dispatchedToSQ;
         assert(loadsInProgress[tid] >= 0);
         assert(storesInProgress[tid] >= 0);
-        assert(instsInProgress[tid] >=0);
+        assert(toIQInProgress[tid] >=0);
+        assert(toRobInProgress[tid] >=0);
     }
 
 }
@@ -625,11 +631,11 @@ DefaultRename<Impl>::renameInsts(ThreadID tid)
 
     DPRINTF(Rename, "[tid:%u]: %i insts pipelining from Rename | %i insts "
             "dispatched to IQ last cycle.\n",
-            tid, instsInProgress[tid], fromIEW->iewInfo[tid].dispatched);
+            tid, toIQInProgress[tid], fromIEW->iewInfo[tid].dispatched);
 
     // Handle serializing the next instruction if necessary.
     if (serializeOnNextInst[tid]) {
-        if (emptyROB[tid] && instsInProgress[tid] == 0) {
+        if (emptyROB[tid] && toRobInProgress[tid] == 0) {
             // ROB already empty; no need to serialize.
             serializeOnNextInst[tid] = false;
         } else if (!insts_to_rename.empty()) {
@@ -638,8 +644,10 @@ DefaultRename<Impl>::renameInsts(ThreadID tid)
     }
 
     int renamed_insts = 0;
+    int to_rob_insts = 0;
 
-    while (insts_available > 0 &&  toIEWIndex < renameWidth + instsWakeNum) {
+
+    while (insts_available > 0 &&  toIEWIndex < renameWidth + instsWakeNum && renamed_insts +instsWakeNum < renameWidth) {
         DPRINTF(Rename, "[tid:%u]: Sending instructions to IEW.\n", tid);
 
         assert(!insts_to_rename.empty());
@@ -757,36 +765,28 @@ DefaultRename<Impl>::renameInsts(ThreadID tid)
             insertLTP(inst,tid);
              
              //set NoneedExe 
-            inst->noNeedExe = true;
+            inst->noNeedExe = true;     
+        }else{
 
-            toIEW->insts[toIEWIndex] = inst;
-            ++(toIEW->size);
-
-            // Increment which instruction we're on.
-            ++toIEWIndex;
-            --insts_available;
-            break;
-
- 
-             
-        }
-        renameSrcRegs(inst, inst->threadNumber);
+            renameSrcRegs(inst, inst->threadNumber);
   
-        renameDestRegs(inst, inst->threadNumber);
+            renameDestRegs(inst, inst->threadNumber);
+                    
+            if (inst->isAtomic() || inst->isStore()) {
+                storesInProgress[tid]++;
+            } else if (inst->isLoad()) {
+                loadsInProgress[tid]++;
+            }
 
-        if (inst->isAtomic() || inst->isStore()) {
-            storesInProgress[tid]++;
-        } else if (inst->isLoad()) {
-            loadsInProgress[tid]++;
+            ++renamed_insts;
+            // Notify potential listeners that source and destination registers for
+            // this instruction have been renamed.
+            ppRename->notify(inst);
         }
-
-        ++renamed_insts;
-        // Notify potential listeners that source and destination registers for
-        // this instruction have been renamed.
-        ppRename->notify(inst);
-
         // Put instruction in rename queue.
         toIEW->insts[toIEWIndex] = inst;
+        //std::cout<<"in rename insts toIEWIndex:"<<toIEWIndex<<" ";
+        //inst->dump();
         ++(toIEW->size);
 
         // Increment which instruction we're on.
@@ -794,9 +794,12 @@ DefaultRename<Impl>::renameInsts(ThreadID tid)
 
         // Decrement how many instructions are available.
         --insts_available;
+        
+        ++to_rob_insts; 
     }
 
-    instsInProgress[tid] += renamed_insts;
+    toIQInProgress[tid] += renamed_insts;
+    toRobInProgress[tid] += to_rob_insts;
     renameRenamedInsts += renamed_insts;
 
     // If we wrote to the time buffer, record this.
@@ -1206,7 +1209,7 @@ inline int
 DefaultRename<Impl>::calcFreeROBEntries(ThreadID tid)
 {
     int num_free = freeEntries[tid].robEntries -
-                  (instsInProgress[tid] - fromIEW->iewInfo[tid].dispatched);
+                  (toRobInProgress[tid] - fromIEW->iewInfo[tid].dispatched - fromIEW->iewInfo[tid].noNeedExeCount);
 
     //DPRINTF(Rename,"[tid:%i]: %i rob free\n",tid,num_free);
 
@@ -1218,7 +1221,7 @@ inline int
 DefaultRename<Impl>::calcFreeIQEntries(ThreadID tid)
 {
     int num_free = freeEntries[tid].iqEntries -
-                  (instsInProgress[tid] - fromIEW->iewInfo[tid].dispatched);
+                  (toIQInProgress[tid] - fromIEW->iewInfo[tid].dispatched);
 
     //DPRINTF(Rename,"[tid:%i]: %i iq free\n",tid,num_free);
 
@@ -1299,7 +1302,7 @@ DefaultRename<Impl>::checkStall(ThreadID tid)
         DPRINTF(Rename,"[tid:%i]: Stall: RenameMap has 0 free entries.\n", tid);
         ret_val = true;
     } else if (renameStatus[tid] == SerializeStall &&
-               (!emptyROB[tid] || instsInProgress[tid])) {
+               (!emptyROB[tid] || toRobInProgress[tid])) {
         DPRINTF(Rename,"[tid:%i]: Stall: Serialize stall and ROB is not "
                 "empty.\n",
                 tid);
@@ -1342,7 +1345,8 @@ DefaultRename<Impl>::readFreeEntries(ThreadID tid)
             renameMap[tid]->numFreeCCEntries());
 
     DPRINTF(Rename, "[tid:%i]: %i instructions not yet in ROB\n",
-            tid, instsInProgress[tid]);
+            tid, toRobInProgress[tid]);
+
 }
 
 template <class Impl>
@@ -1515,6 +1519,7 @@ DefaultRename<Impl>::openLTP(ThreadID tid)
 {
     if(gateLTP[tid] == true) return;
     else gateLTP[tid] = true;
+    DPRINTF(Rename,"[tid:%u]:open LTP");
 }
 
 
@@ -1525,6 +1530,7 @@ DefaultRename<Impl>::closeLTP(ThreadID tid)
 {
     if(gateLTP[tid] == false) return;
     else gateLTP[tid] = false;
+    DPRINTF(Rename,"[tid:%u]:close LTP");
 }
 
 //get LTP status
@@ -1565,7 +1571,7 @@ DefaultRename<Impl>::wakeUpInst(DynInstPtr &inst)
     
     LTP[tid].pop();
     secRenameQueue[tid].push(inst_top);
-    DPRINTF(Rename, "[tid:%u]:waiting in wait up queue.\n",tid);
+    DPRINTF(Rename, "[tid:%u]:waiting in waked up queue.\n",tid);
 
     return true;
    
@@ -1581,11 +1587,12 @@ DefaultRename<Impl>::renameWakeUpInsts(ThreadID tid)
     // Check the decode queue to see if instructions are available.
     // If there are no available instructions to rename, then do nothing.
     if (insts_avail == 0) {
-        DPRINTF(Rename, "[tid:%u]: Rename wake up insts, Nothing to do, "
-            "breaking out early.\n",
-            tid);
+        DPRINTF(Rename, "[tid:%u]: Rename wake up insts, inst_avail is 0, "
+            "breaking out early.\n",tid);
         return;
     }
+    DPRINTF(Rename, "[tid:%u]: Rename wake up insts, inst_avail is %d, "
+            ".\n",tid,insts_avail);
 
     // Will have to do a different calculation for the number of free
     // entries.
@@ -1762,7 +1769,7 @@ DefaultRename<Impl>::renameWakeUpInsts(ThreadID tid)
         --insts_avail;
     }
 
-    instsInProgress[tid] += renamed_insts;
+    toIQInProgress[tid] += renamed_insts;
     renameRenamedInsts += renamed_insts;
 
     // If we wrote to the time buffer, record this.
@@ -1829,7 +1836,7 @@ template <class Impl>
 bool
 DefaultRename<Impl>::findSrcParkBit(DynInstPtr &inst)
 {
-    ThreadID tid = inst->threadNum;
+    ThreadID tid = inst->threadNumber;
     ThreadContext *tc = inst->tcBase();
     RenameMap *map = renameMap[tid];
     unsigned num_src_regs = inst->numSrcRegs();
@@ -1838,9 +1845,8 @@ DefaultRename<Impl>::findSrcParkBit(DynInstPtr &inst)
     // operands, and redirect them to the right physical register.
     for (int src_idx = 0; src_idx < num_src_regs; src_idx++) {
         const RegId& src_reg = inst->srcRegIdx(src_idx);
-        PhysRegIdPtr renamed_reg;
 
-        if(true == map->lookupParkBit(tc->flattenRegId(src_reg)) {
+        if(true == map->lookupParkBit(tc->flattenRegId(src_reg))) {
             return true;
             break;
         }
@@ -1853,7 +1859,7 @@ bool
 DefaultRename<Impl>::fillInRAT(DynInstPtr &inst)
 {
     ThreadContext *tc = inst->tcBase();
-    ThreadID tid = inst->threadNum;
+    ThreadID tid = inst->threadNumber;
     RenameMap *map = renameMap[tid];
     unsigned num_dest_regs = inst->numDestRegs();
     bool result_set = true;
@@ -1864,9 +1870,29 @@ DefaultRename<Impl>::fillInRAT(DynInstPtr &inst)
         RegId flat_dest_regid = tc->flattenRegId(dest_reg);
 
         result_set = map->setPC(flat_dest_regid,inst->pcState());
-        result_set = result_set || map->setParkBit(flat_dest_regid);
+        result_set = result_set && map->setParkBit(flat_dest_regid);
     }
-    
+    return result_set;
+}
+
+template <class Impl>
+bool
+DefaultRename<Impl>::setParkInRAT(DynInstPtr &inst)
+{
+    ThreadContext *tc = inst->tcBase();
+    ThreadID tid = inst->threadNumber;
+    RenameMap *map = renameMap[tid];
+    unsigned num_dest_regs = inst->numDestRegs();
+    bool result_set = true;
+    // Set pc ans Park BIT
+    for (int dest_idx = 0; dest_idx < num_dest_regs; dest_idx++) {
+        const RegId& dest_reg = inst->destRegIdx(dest_idx);
+
+        RegId flat_dest_regid = tc->flattenRegId(dest_reg);
+
+        result_set = map->setParkBit(flat_dest_regid);
+    }
+    return result_set;
 }
 
 
