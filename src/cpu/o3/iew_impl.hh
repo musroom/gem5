@@ -485,6 +485,9 @@ DefaultIEW<Impl>::squash(ThreadID tid)
         }
 
         toRename->iewInfo[tid].dispatched++;
+        if (skidBuffer[tid].front()->fromLTP == false) {
+            toRename->iewInfo[tid].toRobCount++;
+        }
 
         skidBuffer[tid].pop();
     }
@@ -852,7 +855,7 @@ DefaultIEW<Impl>::sortInsts()
         //std::cout<<"in iew ";
         //fromRename->insts[i]->dump();
         if(fromRename->insts[i]->noNeedExe == true) {
-            toRename->iewInfo[fromRename->insts[i]->threadNumber].noNeedExeCount++;   
+            toRename->iewInfo[fromRename->insts[i]->threadNumber].toRobCount++;   
             continue;
         }
         insts[fromRename->insts[i]->threadNumber].push(fromRename->insts[i]);
@@ -877,7 +880,9 @@ DefaultIEW<Impl>::emptyRenameInsts(ThreadID tid)
         }
 
         toRename->iewInfo[tid].dispatched++;
-
+        if(insts[tid].front()->fromLTP == false) {
+            toRename->iewInfo[tid].toRobCount++;
+        }
         insts[tid].pop();
     }
 }
@@ -1019,7 +1024,9 @@ DefaultIEW<Impl>::dispatchInsts(ThreadID tid)
             }
 
             toRename->iewInfo[tid].dispatched++;
-
+            if(inst->fromLTP == false) {
+                toRename->iewInfo[tid].toRobCount++;
+            }
             continue;
         }
 
@@ -1160,7 +1167,7 @@ DefaultIEW<Impl>::dispatchInsts(ThreadID tid)
         insts_to_dispatch.pop();
 
         toRename->iewInfo[tid].dispatched++;
-
+        if(inst->fromLTP == false)  toRename->iewInfo[tid].toRobCount++;
         ++iewDispatchedInsts;
 
 #if TRACING_ON

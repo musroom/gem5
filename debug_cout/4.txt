@@ -1,0 +1,127 @@
+gem5 Simulator System.  http://gem5.org
+gem5 is copyrighted software; use the --copyright option for details.
+
+gem5 compiled Mar 28 2019 11:27:46
+gem5 started Mar 28 2019 11:28:30
+gem5 executing on mprc-R730, pid 7089
+command line: build/X86/gem5.opt --debug-flags=O3CPUAll --debug-start=30000 --debug-file=traceo3v2.out configs/example/se.py -c tests/test-progs/hello/bin/x86/linux/hello --cpu-type=DerivO3CPU --caches
+
+Global frequency set at 1000000000000 ticks per second
+**** REAL SIMULATION ****
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:8,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:8
+rename tick,before toRobInProgress:16,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:16
+rename tick,before toRobInProgress:21,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:21
+rename tick,before toRobInProgress:21,dispatched:8,toRobCount:8
+rename tick,after toRobInProgress:13
+rename tick,before toRobInProgress:13,dispatched:8,toRobCount:8
+rename tick,after toRobInProgress:5
+rename tick,before toRobInProgress:5,dispatched:5,toRobCount:5
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:8,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:8
+rename tick,before toRobInProgress:16,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:16
+rename tick,before toRobInProgress:24,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:24
+rename tick,before toRobInProgress:28,dispatched:8,toRobCount:4
+rename tick,after toRobInProgress:24
+dependency graph is not empty!
+rename tick,before toRobInProgress:24,dispatched:8,toRobCount:4
+rename tick,after toRobInProgress:20

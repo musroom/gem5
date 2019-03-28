@@ -253,7 +253,7 @@ struct TimeBufStruct {
         bool usedLSQ;
         
         //recode the instruction sent to rob without execute
-        unsigned noNeedExeCount;
+        unsigned toRobCount;
     };
 
     iewComm iewInfo[Impl::MaxThreads];

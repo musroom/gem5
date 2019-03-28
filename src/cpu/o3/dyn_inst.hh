@@ -136,6 +136,8 @@ class BaseO3DynInst : public BaseDynInst<Impl>
     bool urgent;
     //just used to tell IEW this instruction need execute or not 
     bool noNeedExe;
+    //used to caculate empty Rob in iew
+    bool fromLTP;
     /** Reads a misc. register, including any side-effects the read
      * might have as defined by the architecture.
      */

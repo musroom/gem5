@@ -714,8 +714,8 @@ DefaultCommit<Impl>::tick()
             ppCommitStall->notify(inst);
 
             DPRINTF(Commit,"[tid:%i]: Can't commit, Instruction [sn:%lli] PC "
-                    "%s is head of ROB and not ready\n",
-                    tid, inst->seqNum, inst->pcState());
+                    "%s is head of ROB and not ready,inst in LTP:[%d]\n",
+                    tid, inst->seqNum, inst->pcState(),inst->noNeedExe);
         }
 
         DPRINTF(Commit, "[tid:%i]: ROB has %d insts & %d free entries.\n",
@@ -1334,7 +1334,7 @@ DefaultCommit<Impl>::getInsts()
     int allrenamewidth = (int)renameWidth + renameStage->maxSecRename;
     //std::cout<<"All rename width："<<allrenamewidth<<std::endl;
     int insts_to_process = std::min(allrenamewidth, fromRename->size);
-    DPRINTF(Commit,"inst to process: %d,allrenamewidth:%d,fromRename->size:%d",insts_to_process,allrenamewidth,fromRename->size);
+    DPRINTF(Commit,"inst to process: %d,allrenamewidth:%d,fromRename->size:%d\n",insts_to_process,allrenamewidth,fromRename->size);
     for (int inst_num = 0; inst_num < insts_to_process; ++inst_num) {
         const DynInstPtr &inst = fromRename->insts[inst_num];
         ThreadID tid = inst->threadNumber;
@@ -1610,17 +1610,30 @@ void
 DefaultCommit<Impl>::wakeUpInsts()
 {
     int wakeup_num = 0;
+    bool back = false;
     if(rob->isEmpty()) return;
+    //if head in LTP wake up 
+    if((*(rob->head))->urgent == false || (*(rob->head))->noNeedExe == true) {
+        back = renameStage->wakeUpInst((*(rob->head)));
+        if(back == true) {
+            DPRINTF(Commit,"in commit,success wake up head seqNum[sn:%lli]"
+                ".\n", (*(rob->head))->seqNum);
+            wakeup_num ++;
+        }else{
+            DPRINTF(Commit, "in commit,wake up head failed the reason is upon "
+                "inst [sn:%lli]\n",(*(rob->head))->seqNum);
 
-    if((*(rob->head))->urgent == false) {
-        DPRINTF(Commit, "Don't wake up insts this cycle");
+        }
+    }else if((*(rob->head))->urgent == false) {
+        
+        DPRINTF(Commit, "Head is not urgent, Don't need wake up insts this cycle");
         return;
     }
 
     list<ThreadID>::iterator threads = activeThreads->begin();
     list<ThreadID>::iterator end = activeThreads->end();
     vector<InstIt> point_vector;
-    bool back = false;
+    back = false;
     
     //init vector
     while (threads != end) {
@@ -1635,16 +1648,16 @@ DefaultCommit<Impl>::wakeUpInsts()
         }
     }
  
-    //if head in LTP wake up 
-    if((*(rob->head))->urgent == false || (*(rob->head))->noNeedExe == true) {
+    //if head in LTP wake up,to wake up instruction is urgent and in LTP  
+    if((*(rob->head))->noNeedExe == true) {
         back = renameStage->wakeUpInst((*(rob->head)));
         if(back == true) {
-            DPRINTF(Commit,"in commit,success wake up head seqNum[sn:%lli]"
+            DPRINTF(Commit,"head is urgent and in LTP,success wake up head seqNum[sn:%lli]"
                 ".\n", (*(rob->head))->seqNum);
             wakeup_num ++;
         }else{
-            DPRINTF(Commit, "in commit,wake up head failed the reason is upon "
-                "inst [sn:%lli]\n",(*(rob->head))->seqNum);
+            DPRINTF(Commit, "head is urgent and in LTP,wake up head failed the reason is "
+                "upon inst [sn:%lli]\n",(*(rob->head))->seqNum);
 
         }
     }

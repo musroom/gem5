@@ -124,6 +124,7 @@ BaseO3DynInst<Impl>::initVars()
 #endif
     urgent = false;
     noNeedExe = false;
+    fromLTP = false;
 }
 
 template <class Impl>

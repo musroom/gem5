@@ -492,7 +492,9 @@ DefaultRename<Impl>::tick()
     // @todo: make into updateProgress function
     for (ThreadID tid = 0; tid < numThreads; tid++) {
         toIQInProgress[tid] -= fromIEW->iewInfo[tid].dispatched;
-        toRobInProgress[tid] -= (fromIEW->iewInfo[tid].dispatched + fromIEW->iewInfo[tid].noNeedExeCount);
+        std::cout<<"rename tick,"<<"before toRobInProgress:"<<toRobInProgress[tid]<<",dispatched:"<<fromIEW->iewInfo[tid].dispatched<<",toRobCount:"<<fromIEW->iewInfo[tid].toRobCount<<std::endl;
+        toRobInProgress[tid] -= fromIEW->iewInfo[tid].toRobCount;
+        std::cout<<"rename tick,"<<"after toRobInProgress:"<<toRobInProgress[tid]<<std::endl;
         loadsInProgress[tid] -= fromIEW->iewInfo[tid].dispatchedToLQ;
         storesInProgress[tid] -= fromIEW->iewInfo[tid].dispatchedToSQ;
         assert(loadsInProgress[tid] >= 0);
@@ -645,6 +647,7 @@ DefaultRename<Impl>::renameInsts(ThreadID tid)
 
     int renamed_insts = 0;
     int to_rob_insts = 0;
+    int park_count = 0;
 
 
     while (insts_available > 0 &&  toIEWIndex < renameWidth + instsWakeNum && renamed_insts +instsWakeNum < renameWidth) {
@@ -758,14 +761,15 @@ DefaultRename<Impl>::renameInsts(ThreadID tid)
         }
         
         
-        if(gateLTP[tid] == true && (inst->urgent == false || findSrcParkBit(inst) == true)){
+        if(gateLTP[tid] == true && park_count < maxSecRename && (inst->urgent == false || findSrcParkBit(inst) == true)){
              //write in to RAT :set pc and set park bit in Rat
             fillInRAT(inst);            
              //insert into LTP
             insertLTP(inst,tid);
              
              //set NoneedExe 
-            inst->noNeedExe = true;     
+            inst->noNeedExe = true;
+            park_count ++;     
         }else{
 
             renameSrcRegs(inst, inst->threadNumber);
@@ -782,6 +786,7 @@ DefaultRename<Impl>::renameInsts(ThreadID tid)
             // Notify potential listeners that source and destination registers for
             // this instruction have been renamed.
             ppRename->notify(inst);
+            inst->noNeedExe = false;
         }
         // Put instruction in rename queue.
         toIEW->insts[toIEWIndex] = inst;
@@ -1209,7 +1214,7 @@ inline int
 DefaultRename<Impl>::calcFreeROBEntries(ThreadID tid)
 {
     int num_free = freeEntries[tid].robEntries -
-                  (toRobInProgress[tid] - fromIEW->iewInfo[tid].dispatched - fromIEW->iewInfo[tid].noNeedExeCount);
+                  (toRobInProgress[tid] - fromIEW->iewInfo[tid].toRobCount);
 
     //DPRINTF(Rename,"[tid:%i]: %i rob free\n",tid,num_free);
 
@@ -1755,6 +1760,7 @@ DefaultRename<Impl>::renameWakeUpInsts(ThreadID tid)
         ppRename->notify(inst);
        
         inst->noNeedExe = false;
+        inst->fromLTP = true;
         // Put instruction in rename queue.
         toIEW->insts[toIEWIndex] = inst;
         ++(toIEW->size);
