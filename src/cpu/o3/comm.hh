@@ -181,8 +181,18 @@ struct DefaultRenameDefaultIEW {
 
     int size;
 
-    DynInstPtr insts[Impl::MaxWidth + Impl::MaxWidth/2];
+    DynInstPtr insts[Impl::MaxWidth];
 };
+
+template<class Impl>
+struct DefaultRenameDefaultCommit {
+    typedef typename Impl::DynInstPtr DynInstPtr;
+
+    int size;
+
+    DynInstPtr insts[Impl::MaxWidth];
+};
+
 
 /** Struct that defines the information passed from IEW to commit. */
 template<class Impl>
@@ -318,6 +328,9 @@ struct TimeBufStruct {
         /// Hack for now to send back an strictly ordered access to
         /// the IEW stage.
         bool strictlyOrdered; // *I
+        
+        // recode get inst from rename 
+        unsigned getFromRename;
 
     };
 

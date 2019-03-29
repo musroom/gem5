@@ -709,6 +709,9 @@ class FullO3CPU : public BaseO3CPU
     typedef typename CPUPolicy::RenameStruct RenameStruct;
 
     typedef typename CPUPolicy::IEWStruct IEWStruct;
+    
+    typedef typename CPUPolicy::RenameCommitStruct RenameCommitStruct;
+
 
     /** The main time buffer to do backwards communication. */
     TimeBuffer<TimeStruct> timeBuffer;
@@ -720,7 +723,10 @@ class FullO3CPU : public BaseO3CPU
     TimeBuffer<DecodeStruct> decodeQueue;
 
     /** The rename stage's instruction queue. */
-    TimeBuffer<RenameStruct> renameQueue;
+    TimeBuffer<RenameStruct> renameQueueIEW;
+    
+    // the rename stage instruction to iew 
+    TimeBuffer<RenameCommitStruct> renameQueueCommit;
 
     /** The IEW stage's instruction queue. */
     TimeBuffer<IEWStruct> iewQueue;

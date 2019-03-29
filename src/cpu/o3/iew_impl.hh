@@ -846,21 +846,24 @@ void
 DefaultIEW<Impl>::sortInsts()
 {
     int insts_from_rename = fromRename->size;
-    //std::cout<<"in iew ,inst_from_rename size:"<<insts_from_rename<<std::endl;
+    int for_debug_count = 0;
+    std::cout<<"in iew ,inst_from_rename size:"<<insts_from_rename<<std::endl;
 #ifdef DEBUG
     for (ThreadID tid = 0; tid < numThreads; tid++)
         assert(insts[tid].empty());
 #endif
+    std::cout<<"in iew "<<std::endl;
     for (int i = 0; i < insts_from_rename; ++i) {
-        //std::cout<<"in iew ";
-        //fromRename->insts[i]->dump();
+        std::cout<<fromRename->insts[i]->noNeedExe<<" ";
+        fromRename->insts[i]->dump();
         if(fromRename->insts[i]->noNeedExe == true) {
             toRename->iewInfo[fromRename->insts[i]->threadNumber].toRobCount++;   
             continue;
         }
         insts[fromRename->insts[i]->threadNumber].push(fromRename->insts[i]);
-        
+        for_debug_count ++;
     }
+    std::cout<<"in iew sorted inst, get exe inst:"<<for_debug_count<<std::endl;
 }
 
 template <class Impl>
@@ -1139,6 +1142,8 @@ DefaultIEW<Impl>::dispatchInsts(ThreadID tid)
 
             add_to_iq = false;
         } else {
+            DPRINTF(IEW, "Execute:in dispatch else  %s, [tid:%i] [sn:%i].\n",
+                inst->pcState(), inst->threadNumber,inst->seqNum); 
             assert(!inst->isExecuted());
             add_to_iq = true;
         }

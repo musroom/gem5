@@ -94,6 +94,7 @@ struct SimpleCPUPolicy
 
     /** The struct for communication between rename and IEW. */
     typedef DefaultRenameDefaultIEW<Impl> RenameStruct;
+    typedef DefaultRenameDefaultCommit<Impl> RenameCommitStruct;
 
     /** The struct for communication between IEW and commit. */
     typedef DefaultIEWDefaultCommit<Impl> IEWStruct;

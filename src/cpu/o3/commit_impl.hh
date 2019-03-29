@@ -303,7 +303,7 @@ DefaultCommit<Impl>::setFetchQueue(TimeBuffer<FetchStruct> *fq_ptr)
 
 template <class Impl>
 void
-DefaultCommit<Impl>::setRenameQueue(TimeBuffer<RenameStruct> *rq_ptr)
+DefaultCommit<Impl>::setRenameQueue(TimeBuffer<RenameCommitStruct> *rq_ptr)
 {
     renameQueue = rq_ptr;
 
@@ -696,6 +696,9 @@ DefaultCommit<Impl>::tick()
 
     while (threads != end) {
         ThreadID tid = *threads++;
+        int value = std::min((int)renameWidth, fromRename->size);
+        if(toIEW->commitInfo[tid].getFromRename == 0) toIEW->commitInfo[tid].getFromRename = value;
+        std::cout<<"in commit,getFromRename:"<<toIEW->commitInfo[tid].getFromRename<<"renamequeue:"<<fromRename->size;
 
         if (!rob->isEmpty(tid) && rob->readHeadInst(tid)->readyToCommit()) {
             // The ROB has more instructions it can commit. Its next status
@@ -1331,16 +1334,19 @@ DefaultCommit<Impl>::getInsts()
     DPRINTF(Commit, "Getting instructions from Rename stage.\n");
 
     // Read any renamed instructions and place them into the ROB.
-    int allrenamewidth = (int)renameWidth + renameStage->maxSecRename;
+    //int allrenamewidth = (int)renameWidth + renameStage->maxSecRename;
     //std::cout<<"All rename width："<<allrenamewidth<<std::endl;
-    int insts_to_process = std::min(allrenamewidth, fromRename->size);
-    DPRINTF(Commit,"inst to process: %d,allrenamewidth:%d,fromRename->size:%d\n",insts_to_process,allrenamewidth,fromRename->size);
+    int insts_to_process = std::min((int)renameWidth, fromRename->size);
+    
+    DPRINTF(Commit,"inst to process: %d,renamewidth:%d,fromRename->size:%d\n",insts_to_process,(int)renameWidth,fromRename->size);
+
     for (int inst_num = 0; inst_num < insts_to_process; ++inst_num) {
         const DynInstPtr &inst = fromRename->insts[inst_num];
         ThreadID tid = inst->threadNumber;
         //std::cout<<"cout inst in getInsts"<<std::endl;
         //inst->dump();
         //update inst to get rename imformation
+        toIEW->commitInfo[tid].getFromRename ++;
         if(rob->isInserted(tid,inst) == true) {
             DPRINTF(Commit,"commit stage find dup inst in rob,"
                 "instruction %i with PC %s",inst->seqNum,inst->pcState());
@@ -1358,7 +1364,7 @@ DefaultCommit<Impl>::getInsts()
                     inst->pcState(), inst->seqNum, tid);
 
             rob->insertInst(inst);
-
+            
             assert(rob->getThreadEntries(tid) <= rob->getMaxEntries(tid));
 
             youngestSeqNum[tid] = inst->seqNum;
@@ -1616,14 +1622,14 @@ DefaultCommit<Impl>::wakeUpInsts()
     if((*(rob->head))->urgent == false || (*(rob->head))->noNeedExe == true) {
         back = renameStage->wakeUpInst((*(rob->head)));
         if(back == true) {
-            DPRINTF(Commit,"in commit,success wake up head seqNum[sn:%lli]"
-                ".\n", (*(rob->head))->seqNum);
+            DPRINTF(Commit,"head is not urgent but in LTP success wake up "
+                "head seqNum[sn:%lli].\n", (*(rob->head))->seqNum);
             wakeup_num ++;
         }else{
-            DPRINTF(Commit, "in commit,wake up head failed the reason is upon "
+            DPRINTF(Commit, "head is not urgent but in LTP,failed LTP head is not this inst "
                 "inst [sn:%lli]\n",(*(rob->head))->seqNum);
-
         }
+        return;
     }else if((*(rob->head))->urgent == false) {
         
         DPRINTF(Commit, "Head is not urgent, Don't need wake up insts this cycle");

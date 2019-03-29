@@ -1,0 +1,157 @@
+gem5 Simulator System.  http://gem5.org
+gem5 is copyrighted software; use the --copyright option for details.
+
+gem5 compiled Mar 29 2019 10:00:58
+gem5 started Mar 29 2019 10:02:19
+gem5 executing on mprc-R730, pid 4476
+command line: build/X86/gem5.opt --debug-flags=O3CPUAll --debug-start=30000 --debug-file=traceo3v3.out configs/example/se.py -c tests/test-progs/hello/bin/x86/linux/hello --cpu-type=DerivO3CPU --caches
+
+Global frequency set at 1000000000000 ticks per second
+**** REAL SIMULATION ****
+in rename:
+rename tick,before toIQ:0,toRob:0,storesInProgress:0
+from IEW:dispatched:0,dispatchedToSQ:0 from commit:getfromrename:0
+rename tick,after: toIQInProgress:0storesInProgress:0,toRobInProgress0x4edd1f0
+
+in iew 
+in iew sorted inst, get exe inst:0
+in rename:
+rename tick,before toIQ:0,toRob:0,storesInProgress:0
+from IEW:dispatched:0,dispatchedToSQ:0 from commit:getfromrename:0
+rename tick,after: toIQInProgress:0storesInProgress:0,toRobInProgress0x4edd1f0
+
+in iew 
+in iew sorted inst, get exe inst:0
+in rename:
+rename tick,before toIQ:0,toRob:0,storesInProgress:0
+from IEW:dispatched:0,dispatchedToSQ:0 from commit:getfromrename:0
+rename tick,after: toIQInProgress:0storesInProgress:0,toRobInProgress0x4edd1f0
+
+in iew 
+in iew sorted inst, get exe inst:0
+in rename:
+rename tick,before toIQ:0,toRob:0,storesInProgress:0
+from IEW:dispatched:0,dispatchedToSQ:0 from commit:getfromrename:0
+rename tick,after: toIQInProgress:0storesInProgress:0,toRobInProgress0x4edd1f0
+
+in iew 
+in iew sorted inst, get exe inst:0
+in rename:
+rename tick,before toIQ:0,toRob:0,storesInProgress:0
+from IEW:dispatched:0,dispatchedToSQ:0 from commit:getfromrename:0
+rename tick,after: toIQInProgress:0storesInProgress:0,toRobInProgress0x4edd1f0
+
+in iew 
+in iew sorted inst, get exe inst:0
+in rename:
+rename tick,before toIQ:0,toRob:0,storesInProgress:0
+from IEW:dispatched:0,dispatchedToSQ:0 from commit:getfromrename:0
+rename tick,after: toIQInProgress:0storesInProgress:0,toRobInProgress0x4edd1f0
+
+in iew 
+in iew sorted inst, get exe inst:0
+in rename:
+rename tick,before toIQ:0,toRob:0,storesInProgress:0
+from IEW:dispatched:0,dispatchedToSQ:0 from commit:getfromrename:0
+rename tick,after: toIQInProgress:0storesInProgress:0,toRobInProgress0x4edd1f0
+
+in iew 
+in iew sorted inst, get exe inst:0
+in rename:
+rename tick,before toIQ:0,toRob:0,storesInProgress:0
+from IEW:dispatched:0,dispatchedToSQ:0 from commit:getfromrename:0
+rename tick,after: toIQInProgress:0storesInProgress:0,toRobInProgress0x4edd1f0
+
+in iew 
+in iew sorted inst, get exe inst:0
+in rename:
+rename tick,before toIQ:0,toRob:0,storesInProgress:0
+from IEW:dispatched:0,dispatchedToSQ:0 from commit:getfromrename:0
+rename tick,after: toIQInProgress:0storesInProgress:0,toRobInProgress0x4edd1f0
+
+in iew 
+in iew sorted inst, get exe inst:0
+in rename:
+rename tick,before toIQ:0,toRob:0,storesInProgress:0
+from IEW:dispatched:0,dispatchedToSQ:0 from commit:getfromrename:0
+rename tick,after: toIQInProgress:0storesInProgress:0,toRobInProgress0x4edd1f0
+
+in iew 
+in iew sorted inst, get exe inst:0
+in rename:
+rename tick,before toIQ:0,toRob:0,storesInProgress:0
+from IEW:dispatched:0,dispatchedToSQ:0 from commit:getfromrename:0
+rename tick,after: toIQInProgress:0storesInProgress:0,toRobInProgress0x4edd1f0
+
+in iew 
+in iew sorted inst, get exe inst:0
+in rename:
+rename tick,before toIQ:0,toRob:0,storesInProgress:0
+from IEW:dispatched:0,dispatchedToSQ:0 from commit:getfromrename:0
+rename tick,after: toIQInProgress:0storesInProgress:0,toRobInProgress0x4edd1f0
+
+in iew 
+in iew sorted inst, get exe inst:0
+in rename:
+rename tick,before toIQ:0,toRob:0,storesInProgress:0
+from IEW:dispatched:0,dispatchedToSQ:0 from commit:getfromrename:0
+rename tick,after: toIQInProgress:0storesInProgress:0,toRobInProgress0x4edd1f0
+
+in iew 
+in iew sorted inst, get exe inst:0
+in rename:
+rename tick,before toIQ:0,toRob:0,storesInProgress:0
+from IEW:dispatched:0,dispatchedToSQ:0 from commit:getfromrename:0
+rename tick,after: toIQInProgress:0storesInProgress:0,toRobInProgress0x4edd1f0
+
+in iew 
+in iew sorted inst, get exe inst:0
+in rename:
+0 T0 : 04194704 `  XOR_R_R : xor   rbp, rbp, rbp'
+0 T0 : 04194707 `  MOV_R_R : mov   r9, r9, rdx'
+0 T0 : 04194710 `  POP_R : ldis   t1, SS:[rsp]'
+0 T0 : 04194710 `  POP_R : addi   rsp, rsp, 0x8'
+0 T0 : 04194710 `  POP_R : mov   rsi, rsi, t1'
+0 T0 : 04194711 `  MOV_R_R : mov   rdx, rdx, rsp'
+0 T0 : 04194714 `  AND_R_I : limm   t1, 0xfffffffffffffff0'
+0 T0 : 04194714 `  AND_R_I : and   rsp, rsp, t1'
+rename tick,before toIQ:8,toRob:8,storesInProgress:0
+from IEW:dispatched:0,dispatchedToSQ:0 from commit:getfromrename:0
+rename tick,after: toIQInProgress:8storesInProgress:0,toRobInProgress0x4edd1f0
+
+in iew 
+in iew sorted inst, get exe inst:0
+in rename:
+0 T0 : 04194718 `  PUSH_R : stis   rax, SS:[rsp + 0xfffffffffffffff8]'
+0 T0 : 04194718 `  PUSH_R : subi   rsp, rsp, 0x8'
+0 T0 : 04194719 `  PUSH_R : stis   rsp, SS:[rsp + 0xfffffffffffffff8]'
+0 T0 : 04194719 `  PUSH_R : subi   rsp, rsp, 0x8'
+0 T0 : 04194720 `  MOV_R_I : limm   r8, 0x40a060'
+0 T0 : 04194727 `  MOV_R_I : limm   rcx, 0x409ff0'
+0 T0 : 04194734 `  MOV_R_I : limm   rdi, 0x400274'
+0 T0 : 04194741 `  CALL_NEAR_I : limm   t1, 0x9846'
+rename tick,before toIQ:16,toRob:16,storesInProgress:2
+from IEW:dispatched:0,dispatchedToSQ:0 from commit:getfromrename:0
+rename tick,after: toIQInProgress:16storesInProgress:2,toRobInProgress0x4edd1f0
+
+in iew 
+in iew sorted inst, get exe inst:0
+in rename:
+0 T0 : 04194741 `  CALL_NEAR_I : rdip   t7, %ctrl153, '
+0 T0 : 04194741 `  CALL_NEAR_I : stis   t7, SS:[rsp + 0xfffffffffffffff8]'
+0 T0 : 04194741 `  CALL_NEAR_I : subi   rsp, rsp, 0x8'
+0 T0 : 04194741 `  CALL_NEAR_I : wrip   , t7, t1'
+0 T0 : 04194746 `  HLT : halt   '
+rename tick,before toIQ:21,toRob:21,storesInProgress:3
+from IEW:dispatched:0,dispatchedToSQ:0 from commit:getfromrename:0
+rename tick,after: toIQInProgress:21storesInProgress:3,toRobInProgress0x4edd1f0
+
+in iew 
+0 T0 : 04194704 `  XOR_R_R : xor   rbp, rbp, rbp'
+0 T0 : 04194707 `  MOV_R_R : mov   r9, r9, rdx'
+0 T0 : 04194710 `  POP_R : ldis   t1, SS:[rsp]'
+0 T0 : 04194710 `  POP_R : addi   rsp, rsp, 0x8'
+0 T0 : 04194710 `  POP_R : mov   rsi, rsi, t1'
+0 T0 : 04194711 `  MOV_R_R : mov   rdx, rdx, rsp'
+0 T0 : 04194714 `  AND_R_I : limm   t1, 0xfffffffffffffff0'
+0 T0 : 04194714 `  AND_R_I : and   rsp, rsp, t1'

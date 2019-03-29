@@ -1,0 +1,156 @@
+gem5 Simulator System.  http://gem5.org
+gem5 is copyrighted software; use the --copyright option for details.
+
+gem5 compiled Mar 28 2019 13:31:48
+gem5 started Mar 28 2019 13:32:23
+gem5 executing on mprc-R730, pid 12504
+command line: build/X86/gem5.opt --debug-flags=O3CPUAll --debug-start=30000 --debug-file=traceo3v2.out configs/example/se.py -c tests/test-progs/hello/bin/x86/linux/hello --cpu-type=DerivO3CPU --caches
+
+Global frequency set at 1000000000000 ticks per second
+**** REAL SIMULATION ****
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:8,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:8
+rename tick,before toRobInProgress:16,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:16
+rename tick,before toRobInProgress:21,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:21
+T0 : 04194704 `  XOR_R_R : xor   rbp, rbp, rbp'
+T0 : 04194707 `  MOV_R_R : mov   r9, r9, rdx'
+T0 : 04194710 `  POP_R : addi   rsp, rsp, 0x8'
+T0 : 04194710 `  POP_R : mov   rsi, rsi, t1'
+T0 : 04194711 `  MOV_R_R : mov   rdx, rdx, rsp'
+T0 : 04194714 `  AND_R_I : limm   t1, 0xfffffffffffffff0'
+T0 : 04194714 `  AND_R_I : and   rsp, rsp, t1'
+rename tick,before toRobInProgress:21,dispatched:8,toRobCount:8
+rename tick,after toRobInProgress:13
+T0 : 04194718 `  PUSH_R : subi   rsp, rsp, 0x8'
+T0 : 04194719 `  PUSH_R : subi   rsp, rsp, 0x8'
+T0 : 04194720 `  MOV_R_I : limm   r8, 0x40a060'
+T0 : 04194727 `  MOV_R_I : limm   rcx, 0x409ff0'
+T0 : 04194734 `  MOV_R_I : limm   rdi, 0x400274'
+T0 : 04194741 `  CALL_NEAR_I : limm   t1, 0x9846'
+rename tick,before toRobInProgress:13,dispatched:8,toRobCount:8
+rename tick,after toRobInProgress:5
+T0 : 04194741 `  CALL_NEAR_I : rdip   t7, %ctrl153, '
+T0 : 04194741 `  CALL_NEAR_I : subi   rsp, rsp, 0x8'
+T0 : 04194741 `  CALL_NEAR_I : wrip   , t7, t1'
+T0 : 04194746 `  HLT : halt   '
+rename tick,before toRobInProgress:5,dispatched:5,toRobCount:5
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:0,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:0
+rename tick,before toRobInProgress:8,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:8
+rename tick,before toRobInProgress:16,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:16
+rename tick,before toRobInProgress:24,dispatched:0,toRobCount:0
+rename tick,after toRobInProgress:24
+T0 : 04233728 `  PUSH_R : subi   rsp, rsp, 0x8'
+T0 : 04233730 `  MOVSXD_R_R : sexti   rax, rsi, 0x1f'
+T0 : 04233733 `  MOV_R_R : mov   r15, r15, r9'
+T0 : 04233736 `  PUSH_R : subi   rsp, rsp, 0x8'
+T0 : 04233738 `  MOV_R_R : mov   r14, r14, rdx'
+rename tick,before toRobInProgress:28,dispatched:8,toRobCount:4
+rename tick,after toRobInProgress:24
+T0 : 04233741 `  PUSH_R : subi   rsp, rsp, 0x8'
+T0 : 04233743 `  MOV_R_R : mov   r13d, r13d, esi'
+T0 : 04233746 `  PUSH_R : subi   rsp, rsp, 0x8'
+T0 : 04233748 `  PUSH_R : subi   rsp, rsp, 0x8'
+T0 : 04233749 `  PUSH_R : subi   rsp, rsp, 0x8'
+dependency graph is not empty!
+rename tick,before toRobInProgress:24,dispatched:8,toRobCount:4
+rename tick,after toRobInProgress:20
+T0 : 04233728 `  PUSH_R : subi   rsp, rsp, 0x8'
+T0 : 04233730 `  MOVSXD_R_R : sexti   rax, rsi, 0x1f'

@@ -78,6 +78,7 @@ class DefaultRename
     // Typedefs from the CPUPol
     typedef typename CPUPol::DecodeStruct DecodeStruct;
     typedef typename CPUPol::RenameStruct RenameStruct;
+    typedef typename CPUPol::RenameCommitStruct RenameCommitStruct;
     typedef typename CPUPol::TimeStruct TimeStruct;
     typedef typename CPUPol::FreeList FreeList;
     typedef typename CPUPol::RenameMap RenameMap;
@@ -147,7 +148,7 @@ class DefaultRename
     void setTimeBuffer(TimeBuffer<TimeStruct> *tb_ptr);
 
     /** Sets pointer to time buffer used to communicate to the next stage. */
-    void setRenameQueue(TimeBuffer<RenameStruct> *rq_ptr);
+    void setRenameQueue(TimeBuffer<RenameStruct> *rq_ptr_iew,TimeBuffer<RenameCommitStruct> *rq_ptr_commit);
 
     /** Sets pointer to time buffer coming from decode. */
     void setDecodeQueue(TimeBuffer<DecodeStruct> *dq_ptr);
@@ -346,10 +347,13 @@ class DefaultRename
     typename TimeBuffer<TimeStruct>::wire toDecode;
 
     /** Rename instruction queue. */
-    TimeBuffer<RenameStruct> *renameQueue;
+    TimeBuffer<RenameStruct> *renameQueueIEW;
+    TimeBuffer<RenameCommitStruct> *renameQueueCommit;
 
     /** Wire to write any information heading to IEW. */
-    typename TimeBuffer<RenameStruct>::wire toIEW;
+    typename TimeBuffer<RenameStruct>::wire toIEWW;
+
+    typename TimeBuffer<RenameCommitStruct>::wire toCommit;
 
     /** Decode instruction queue interface. */
     TimeBuffer<DecodeStruct> *decodeQueue;
@@ -456,7 +460,9 @@ class DefaultRename
     /** The index of the instruction in the time buffer to IEW that rename is
      * currently using.
      */
-    unsigned toIEWIndex;
+    unsigned toIEWWIndex;
+    
+    unsigned toCommitIndex;
 
     /** Whether or not rename needs to block this cycle. */
     bool blockThisCycle;

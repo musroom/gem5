@@ -235,12 +235,15 @@ DefaultRename<Impl>::setTimeBuffer(TimeBuffer<TimeStruct> *tb_ptr)
 
 template <class Impl>
 void
-DefaultRename<Impl>::setRenameQueue(TimeBuffer<RenameStruct> *rq_ptr)
+DefaultRename<Impl>::setRenameQueue(TimeBuffer<RenameStruct> *rq_ptr_iew,TimeBuffer<RenameCommitStruct> *rq_ptr_commit)
 {
-    renameQueue = rq_ptr;
+    renameQueueIEW = rq_ptr_iew;
+    renameQueueCommit = rq_ptr_commit;
 
     // Setup wire to write information to future stages.
-    toIEW = renameQueue->getWire(0);
+    toIEWW = renameQueueIEW->getWire(0);
+    toCommit = renameQueueCommit->getWire(0);
+
 }
 
 template <class Impl>
@@ -442,7 +445,8 @@ DefaultRename<Impl>::tick()
 
     bool status_change = false;
 
-    toIEWIndex = 0;
+    toIEWWIndex = 0;
+    toCommitIndex = 0;
     
     instsWakeNum = 0;//number of insts wake up these tick()
     
@@ -452,13 +456,14 @@ DefaultRename<Impl>::tick()
     list<ThreadID>::iterator end = activeThreads->end();
 
     // Check stall and squash signals.
+    std::cout<<"in rename:"<<std::endl;
     while (threads != end) {
         ThreadID tid = *threads++;
 
         DPRINTF(Rename, "Processing [tid:%i]\n", tid);
 
         status_change = checkSignalsAndUpdate(tid) || status_change;
-        
+         
         renameWakeUpInsts(tid);
         
         rename(status_change, tid);
@@ -491,16 +496,23 @@ DefaultRename<Impl>::tick()
 
     // @todo: make into updateProgress function
     for (ThreadID tid = 0; tid < numThreads; tid++) {
+        std::cout<<"rename tick,"<<"before toIQ:"<<toIQInProgress[tid]<<",toRob:"<<toRobInProgress[tid]<<",storesInProgress:"<<storesInProgress[tid]<<std::endl;
+        std::cout<<"from IEW:"<<"dispatched:"<<fromIEW->iewInfo[tid].dispatched;
+        std::cout<<" from commit:getfromrename:"<<fromCommit->commitInfo[tid].getFromRename<<std::endl;
+        std::cout<<",dispatchedToSQ:"<<fromIEW->iewInfo[tid].dispatchedToSQ;
+        
         toIQInProgress[tid] -= fromIEW->iewInfo[tid].dispatched;
-        std::cout<<"rename tick,"<<"before toRobInProgress:"<<toRobInProgress[tid]<<",dispatched:"<<fromIEW->iewInfo[tid].dispatched<<",toRobCount:"<<fromIEW->iewInfo[tid].toRobCount<<std::endl;
-        toRobInProgress[tid] -= fromIEW->iewInfo[tid].toRobCount;
-        std::cout<<"rename tick,"<<"after toRobInProgress:"<<toRobInProgress[tid]<<std::endl;
+        toRobInProgress[tid] -= fromCommit->commitInfo[tid].getFromRename;
         loadsInProgress[tid] -= fromIEW->iewInfo[tid].dispatchedToLQ;
         storesInProgress[tid] -= fromIEW->iewInfo[tid].dispatchedToSQ;
+        
+        std::cout<<"rename tick,"<<"after: toIQInProgress:"<<toIQInProgress[tid]<<",toRobInProgress"<<toRobInProgress[tid]<<"storesInProgress:"<<storesInProgress[tid]<<std::endl;
+
         assert(loadsInProgress[tid] >= 0);
         assert(storesInProgress[tid] >= 0);
         assert(toIQInProgress[tid] >=0);
         assert(toRobInProgress[tid] >=0);
+        std::cout<<endl;
     }
 
 }
@@ -650,7 +662,7 @@ DefaultRename<Impl>::renameInsts(ThreadID tid)
     int park_count = 0;
 
 
-    while (insts_available > 0 &&  toIEWIndex < renameWidth + instsWakeNum && renamed_insts +instsWakeNum < renameWidth) {
+    while (insts_available > 0 &&  toIEWWIndex < renameWidth && toCommitIndex < renameWidth) {
         DPRINTF(Rename, "[tid:%u]: Sending instructions to IEW.\n", tid);
 
         assert(!insts_to_rename.empty());
@@ -787,20 +799,28 @@ DefaultRename<Impl>::renameInsts(ThreadID tid)
             // this instruction have been renamed.
             ppRename->notify(inst);
             inst->noNeedExe = false;
+             
+            toIEWW->insts[toIEWWIndex] = inst;
+            ++(toIEWW->size);
+            // Increment which instruction we're on.
+            ++toIEWWIndex;
+            std::cout<<"to iew,commit size:"<<toCommit->size<<" iew size:"<<toIEWW->size<<"noNeedExe:"<<inst->noNeedExe<<" ";
+            inst->dump();
         }
-        // Put instruction in rename queue.
-        toIEW->insts[toIEWIndex] = inst;
-        //std::cout<<"in rename insts toIEWIndex:"<<toIEWIndex<<" ";
-        //inst->dump();
-        ++(toIEW->size);
+        toCommit->insts[toCommitIndex] = inst;
+        ++(toCommit->size);
 
         // Increment which instruction we're on.
-        ++toIEWIndex;
+        ++toCommitIndex;
 
         // Decrement how many instructions are available.
         --insts_available;
         
-        ++to_rob_insts; 
+        ++to_rob_insts;
+        std::cout<<"to commit,commit size:"<<toCommit->size<<" iew size:"<<toIEWW->size<<"noNeedExe:"<<inst->noNeedExe<<" ";
+        inst->dump();
+       
+         
     }
 
     toIQInProgress[tid] += renamed_insts;
@@ -808,7 +828,7 @@ DefaultRename<Impl>::renameInsts(ThreadID tid)
     renameRenamedInsts += renamed_insts;
 
     // If we wrote to the time buffer, record this.
-    if (toIEWIndex) {
+    if (toIEWWIndex || toCommitIndex) {
         wroteToTimeBuffer = true;
     }
 
@@ -1214,7 +1234,7 @@ inline int
 DefaultRename<Impl>::calcFreeROBEntries(ThreadID tid)
 {
     int num_free = freeEntries[tid].robEntries -
-                  (toRobInProgress[tid] - fromIEW->iewInfo[tid].toRobCount);
+                  (toRobInProgress[tid] - fromCommit->commitInfo[tid].getFromRename);
 
     //DPRINTF(Rename,"[tid:%i]: %i rob free\n",tid,num_free);
 
@@ -1762,24 +1782,26 @@ DefaultRename<Impl>::renameWakeUpInsts(ThreadID tid)
         inst->noNeedExe = false;
         inst->fromLTP = true;
         // Put instruction in rename queue.
-        toIEW->insts[toIEWIndex] = inst;
-        ++(toIEW->size);
+        toIEWW->insts[toIEWWIndex] = inst;
+        ++(toIEWW->size);
 
         // Increment which instruction we're on.
-        ++toIEWIndex;
+        ++toIEWWIndex;
        
         //the number of wake up and rename instruction 
         ++instsWakeNum;
 
         // Decrement how many instructions are available.
         --insts_avail;
+        std::cout<<inst->noNeedExe<<" ";
+        inst->dump();
     }
 
     toIQInProgress[tid] += renamed_insts;
     renameRenamedInsts += renamed_insts;
 
     // If we wrote to the time buffer, record this.
-    if (toIEWIndex) {
+    if (toIEWWIndex) {
         wroteToTimeBuffer = true;
     }
 

@@ -96,6 +96,7 @@ class DefaultCommit
     typedef typename CPUPol::FetchStruct FetchStruct;
     typedef typename CPUPol::IEWStruct IEWStruct;
     typedef typename CPUPol::RenameStruct RenameStruct;
+    typedef typename CPUPol::RenameCommitStruct RenameCommitStruct;
 
     typedef typename CPUPol::Fetch Fetch;
     typedef typename CPUPol::IEW IEW;
@@ -164,7 +165,7 @@ class DefaultCommit
     void setFetchQueue(TimeBuffer<FetchStruct> *fq_ptr);
 
     /** Sets the pointer to the queue coming from rename. */
-    void setRenameQueue(TimeBuffer<RenameStruct> *rq_ptr);
+    void setRenameQueue(TimeBuffer<RenameCommitStruct> *rq_ptr);
 
     /** Sets the pointer to the queue coming from IEW. */
     void setIEWQueue(TimeBuffer<IEWStruct> *iq_ptr);
@@ -351,10 +352,10 @@ class DefaultCommit
     typename TimeBuffer<IEWStruct>::wire fromIEW;
 
     /** Rename instruction queue interface, for ROB. */
-    TimeBuffer<RenameStruct> *renameQueue;
+    TimeBuffer<RenameCommitStruct> *renameQueue;
 
     /** Wire to read information from rename queue. */
-    typename TimeBuffer<RenameStruct>::wire fromRename;
+    typename TimeBuffer<RenameCommitStruct>::wire fromRename;
 
   public:
     /** ROB interface. */

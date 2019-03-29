@@ -180,7 +180,8 @@ FullO3CPU<Impl>::FullO3CPU(DerivO3CPUParams *params)
       timeBuffer(params->backComSize, params->forwardComSize),
       fetchQueue(params->backComSize, params->forwardComSize),
       decodeQueue(params->backComSize, params->forwardComSize),
-      renameQueue(params->backComSize, params->forwardComSize),
+      renameQueueIEW(params->backComSize, params->forwardComSize),
+      renameQueueCommit(params->backComSize, params->forwardComSize),
       iewQueue(params->backComSize, params->forwardComSize),
       activityRec(name(), NumStages,
                   params->backComSize + params->forwardComSize,
@@ -234,11 +235,11 @@ FullO3CPU<Impl>::FullO3CPU(DerivO3CPUParams *params)
     commit.setFetchQueue(&fetchQueue);
     decode.setDecodeQueue(&decodeQueue);
     rename.setDecodeQueue(&decodeQueue);
-    rename.setRenameQueue(&renameQueue);
-    iew.setRenameQueue(&renameQueue);
+    rename.setRenameQueue(&renameQueueIEW,&renameQueueCommit);
+    iew.setRenameQueue(&renameQueueIEW);
     iew.setIEWQueue(&iewQueue);
     commit.setIEWQueue(&iewQueue);
-    commit.setRenameQueue(&renameQueue);
+    commit.setRenameQueue(&renameQueueCommit);
 
     commit.setIEWStage(&iew);
     rename.setIEWStage(&iew);
@@ -614,7 +615,8 @@ FullO3CPU<Impl>::tick()
 
     fetchQueue.advance();
     decodeQueue.advance();
-    renameQueue.advance();
+    renameQueueIEW.advance();
+    renameQueueCommit.advance();
     iewQueue.advance();
 
     activityRec.advance();
@@ -1104,7 +1106,8 @@ FullO3CPU<Impl>::drain()
             timeBuffer.advance();
             fetchQueue.advance();
             decodeQueue.advance();
-            renameQueue.advance();
+            renameQueueIEW.advance();
+            renameQueueCommit.advance();
             iewQueue.advance();
         }
 
