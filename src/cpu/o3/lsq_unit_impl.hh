@@ -860,7 +860,7 @@ LSQUnit<Impl>::squash(const InstSeqNum &squashed_num)
     if (memDepViolator && squashed_num < memDepViolator->seqNum) {
         memDepViolator = NULL;
     }
-
+    DPRINTF(LSQUnit,"now strorequque.back:%d",storeQueue.back().instruction()->seqNum);
     while (stores != 0 &&
            storeQueue.back().instruction()->seqNum > squashed_num) {
         // Instructions marked as can WB are already committed.
@@ -1142,8 +1142,8 @@ LSQUnit<Impl>::setLTP(Cycles curCycle,uint8_t depth,ThreadID tid)
     }
     
     if(old_sta != sta) {
-        //if(sta == true) renameStage->openLTP(tid);
-        if(sta == true) renameStage->closeLTP(tid);
+        if(sta == true) renameStage->openLTP(tid);
+        //if(sta == true) renameStage->closeLTP(tid);
         else renameStage->closeLTP(tid);
     }
     

@@ -1140,6 +1140,8 @@ DefaultCommit<Impl>::commitInsts()
                 DPRINTF(Commit, "Unable to commit head instruction PC:%s "
                         "[tid:%i] [sn:%i].\n",
                         head_inst->pcState(), tid ,head_inst->seqNum);
+                std::cout<<"i am can not commit head:";
+                head_inst->dump();
                 break;
             }
         }
@@ -1158,7 +1160,9 @@ bool
 DefaultCommit<Impl>::commitHead(const DynInstPtr &head_inst, unsigned inst_num)
 {
     assert(head_inst);
-
+    
+    std::cout<<"commithead:: SN:"<<head_inst->seqNum<<" val:"<<head_inst->res<<" ";
+    head_inst->dump();
     ThreadID tid = head_inst->threadNumber;
 
     // If the instruction is not executed yet, then it will need extra
@@ -1218,8 +1222,11 @@ DefaultCommit<Impl>::commitHead(const DynInstPtr &head_inst, unsigned inst_num)
     if (inst_fault != NoFault) {
         DPRINTF(Commit, "Inst [sn:%lli] PC %s has a fault\n",
                 head_inst->seqNum, head_inst->pcState());
-
+        DPRINTF(Commit, "is Inst a store ?:\n",
+                head_inst->isStore());
         if (iewStage->hasStoresToWB(tid) || inst_num > 0) {
+            DPRINTF(Commit, "inst_num:%d.\n",inst_num);
+            DPRINTF(Commit, "hasStoresToWB:%d.\n",iewStage->hasStoresToWB(tid));
             DPRINTF(Commit, "Stores outstanding, fault must wait.\n");
             return false;
         }
@@ -1347,11 +1354,11 @@ DefaultCommit<Impl>::getInsts()
         //inst->dump();
         //update inst to get rename imformation
         toIEW->commitInfo[tid].getFromRename ++;
-        if(rob->isInserted(tid,inst) == true) {
+        /*if(rob->isInserted(tid,inst) == true) {
             DPRINTF(Commit,"commit stage find dup inst in rob,"
                 "instruction %i with PC %s",inst->seqNum,inst->pcState());
             continue;
-        }
+        }*/
             
 
         
@@ -1619,14 +1626,14 @@ DefaultCommit<Impl>::wakeUpInsts()
     bool back = false;
     if(rob->isEmpty()) return;
     //if head in LTP wake up 
-    if((*(rob->head))->urgent == false || (*(rob->head))->noNeedExe == true) {
+    /*if((*(rob->head))->urgent == false || (*(rob->head))->noNeedExe == true) {
         back = renameStage->wakeUpInst((*(rob->head)));
         if(back == true) {
-            DPRINTF(Commit,"head is not urgent but in LTP success wake up "
+            DPRINTF(Commit,"head is non-urgent and in LTP success wake up "
                 "head seqNum[sn:%lli].\n", (*(rob->head))->seqNum);
             wakeup_num ++;
         }else{
-            DPRINTF(Commit, "head is not urgent but in LTP,failed LTP head is not this inst "
+            DPRINTF(Commit, "head is non-urgent but in LTP,failed LTP head is not this inst "
                 "inst [sn:%lli]\n",(*(rob->head))->seqNum);
         }
         return;
@@ -1634,7 +1641,24 @@ DefaultCommit<Impl>::wakeUpInsts()
         
         DPRINTF(Commit, "Head is not urgent, Don't need wake up insts this cycle");
         return;
-    }
+    }*/
+    if((*(rob->head))->urgent == false) {
+        if((*(rob->head))->noNeedExe == true) {
+            back = renameStage->wakeUpInst((*(rob->head)));
+            if(back == true) {
+                DPRINTF(Commit,"head is non-urgent and in LTP success wake up "
+                    "head seqNum[sn:%lli].\n", (*(rob->head))->seqNum);
+                wakeup_num ++;
+            }else{
+                DPRINTF(Commit, "head is non-urgent but in LTP,failed LTP head is not this inst "
+                "inst [sn:%lli]\n",(*(rob->head))->seqNum);
+            }
+        }
+        DPRINTF(Commit,"wake up insts this cycle:\n",wakeup_num);
+        return;
+   }
+   
+
 
     list<ThreadID>::iterator threads = activeThreads->begin();
     list<ThreadID>::iterator end = activeThreads->end();
@@ -1654,7 +1678,7 @@ DefaultCommit<Impl>::wakeUpInsts()
         }
     }
  
-    //if head in LTP wake up,to wake up instruction is urgent and in LTP  
+    //if head is urgent and in LTP wake up,to wake up instruction is urgent and in LTP  
     if((*(rob->head))->noNeedExe == true) {
         back = renameStage->wakeUpInst((*(rob->head)));
         if(back == true) {

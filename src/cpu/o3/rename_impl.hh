@@ -711,7 +711,7 @@ DefaultRename<Impl>::renameInsts(ThreadID tid)
             continue;
         }
 
-        DPRINTF(Rename, "[tid:%u]: Processing instruction [sn:%lli] with "
+        DPRINTF(Rename, "[tid:%u]: renameInst,Processing instruction [sn:%lli] with "
                 "PC %s.\n", tid, inst->seqNum, inst->pcState());
 
         // Check here to make sure there are enough destination registers
@@ -1049,6 +1049,22 @@ DefaultRename<Impl>::doSquash(const InstSeqNum &squashed_seq_num, ThreadID tid)
 
         ++renameUndoneMaps;
     }
+    //squash LTP
+    for(int i=0;i<secRenameQueue[tid].size();i++) {
+        if(secRenameQueue[tid].front()->seqNum > squashed_seq_num) {
+            secRenameQueue[tid].pop();
+        } else {
+            break;
+        }
+    }
+ 
+    for(int i=0;i<LTP[tid].size();i++) {
+        if(LTP[tid].front()->seqNum > squashed_seq_num) {
+            LTP[tid].pop();
+        } else {
+            break;
+        }
+    }
 
     // Check if we need to change vector renaming mode after squashing
     cpu->switchRenameMode(tid, freeList);
@@ -1153,6 +1169,7 @@ DefaultRename<Impl>::renameSrcRegs(const DynInstPtr &inst, ThreadID tid)
             TheISA::PCState temp = map->getSourceInstPC(tc->flattenRegId(src_reg));
             if(temp != 0) {
                 decode_ptr->urgInsert(inst, tid);
+                DPRINTF(Rename, "set Source inst into UIT");
                 inst->urgent = true;
             }
         }
@@ -1165,6 +1182,11 @@ DefaultRename<Impl>::renameSrcRegs(const DynInstPtr &inst, ThreadID tid)
                     renamed_reg->className());
 
             inst->markSrcRegReady(src_idx);
+            uint64_t temp = 0;
+            if(renamed_reg->isIntPhysReg() == true) {
+                cpu->readIntReg(renamed_reg);
+                std::cout<<"SN"<<inst->seqNum<<"get source op["<<src_idx<<"] value is:"<<temp<<std::endl;
+            }
         } else {
             DPRINTF(Rename, "[tid:%u]: Register %d (flat: %d) (%s)"
                     " is not ready.\n", tid, renamed_reg->index(),
@@ -1449,7 +1471,7 @@ DefaultRename<Impl>::checkSignalsAndUpdate(ThreadID tid)
 
         unblock(tid);
 
-        DPRINTF(Rename, "[tid:%u]: Processing instruction [%lli] with "
+        DPRINTF(Rename, "[tid:%u]: in check signal,Processing instruction [%lli] with "
                 "PC %s.\n", tid, serial_inst->seqNum, serial_inst->pcState());
 
         // Put instruction into queue here.
@@ -1705,7 +1727,7 @@ DefaultRename<Impl>::renameWakeUpInsts(ThreadID tid)
             continue;
         }
 
-        DPRINTF(Rename, "[tid:%u]: Processing instruction [sn:%lli] with "
+        DPRINTF(Rename, "[tid:%u]: in renname wake up inst,Processing instruction [sn:%lli] with "
                 "PC %s.\n", tid, inst->seqNum, inst->pcState());
 
         // Check here to make sure there are enough destination registers
@@ -1764,6 +1786,10 @@ DefaultRename<Impl>::renameWakeUpInsts(ThreadID tid)
             serializeAfter(insts_to_rename, tid);
         }
         */
+        DPRINTF(Rename, "Start to rename inst.\n");
+        std::cout<<"i am in wake up renamer inst";
+        inst->dump();
+        DPRINTF(Rename, "finish inst dump.\n");
         renameSrcRegs(inst, inst->threadNumber);
 
         renameDestRegsSec(inst, inst->threadNumber);

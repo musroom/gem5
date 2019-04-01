@@ -144,6 +144,7 @@ class BaseDynInst : public ExecContext, public RefCounted
     };
 
   public:
+    uint64_t res = 0;
     /** The sequence number of the instruction. */
     InstSeqNum seqNum;
 
@@ -664,7 +665,7 @@ class BaseDynInst : public ExecContext, public RefCounted
 
     /** Records an integer register being set to a value. */
     void setIntRegOperand(const StaticInst *si, int idx, RegVal val)
-    {
+    {   this->res = val;
         setScalarResult(val);
     }
 
