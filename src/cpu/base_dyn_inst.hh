@@ -246,7 +246,7 @@ class BaseDynInst : public ExecContext, public RefCounted
     // get from request req from LSQ
     uint8_t depth;
     
-  protected:
+  public:
     /** Flattened register index of the destination registers of this
      *  instruction.
      */

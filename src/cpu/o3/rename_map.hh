@@ -167,6 +167,7 @@ class SimpleRenameMap
         extmap[arch_reg.flatIndex()].preg = phys_reg; 
         extmap[arch_reg.flatIndex()].pc = 0;
         extmap[arch_reg.flatIndex()].parkBit = false;
+        
         secmap[arch_reg.flatIndex()] = NULL;
     }
 

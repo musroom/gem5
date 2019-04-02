@@ -1426,14 +1426,14 @@ InstructionQueue<Impl>::addToProducers(const DynInstPtr &new_inst)
         }
 
         if (!dependGraph.empty(dest_reg->flatIndex())) {
-            /*dependGraph.dump();
+            dependGraph.dump();
             panic("Dependency graph %i (%s) (flat: %i) not empty!",
                   dest_reg->index(), dest_reg->className(),
-                  dest_reg->flatIndex());*/
-             DPRINTF(IQ,"Dependency graph %i (%s) (flat: %i) not empty!",
+                  dest_reg->flatIndex());
+            /* DPRINTF(IQ,"Dependency graph %i (%s) (flat: %i) not empty!",
                   dest_reg->index(), dest_reg->className(),
                   dest_reg->flatIndex());
-             std::cout<<"dependency graph is not empty!"<<std::endl; 
+             std::cout<<"dependency graph is not empty!"<<std::endl; */
         }
 
         dependGraph.setInst(dest_reg->flatIndex(), new_inst);

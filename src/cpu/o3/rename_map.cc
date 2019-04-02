@@ -91,6 +91,9 @@ SimpleRenameMap::rename(const RegId& arch_reg,TheISA::PCState pc)
 
         extmap[arch_reg.flatIndex()].preg = renamed_reg;
         extmap[arch_reg.flatIndex()].pc = pc;
+        extmap[arch_reg.flatIndex()].parkBit = false;
+
+        secmap[arch_reg.flatIndex()] = NULL;
       
     } else {
         // Otherwise return the zero register so nothing bad happens.
@@ -125,6 +128,10 @@ SimpleRenameMap::renameWakeUp(const RegId& arch_reg)
     if (arch_reg != zeroReg) {
         renamed_reg = freeList->getReg();
         secmap[arch_reg.flatIndex()] = renamed_reg;
+        
+        extmap[arch_reg.flatIndex()].preg = NULL;
+        extmap[arch_reg.flatIndex()].pc = 0;
+        extmap[arch_reg.flatIndex()].parkBit = false;
 
     } else {
         // Otherwise return the zero register so nothing bad happens.

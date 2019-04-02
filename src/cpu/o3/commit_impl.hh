@@ -1163,6 +1163,35 @@ DefaultCommit<Impl>::commitHead(const DynInstPtr &head_inst, unsigned inst_num)
     
     std::cout<<"commithead:: SN:"<<head_inst->seqNum<<" val:"<<head_inst->res<<" ";
     head_inst->dump();
+
+    unsigned num_src_regs = head_inst->numSrcRegs();
+    for (int src_idx = 0; src_idx < num_src_regs; src_idx++) {
+        const RegId& src_reg = head_inst->srcRegIdx(src_idx);
+        PhysRegIdPtr renamed_reg;
+        uint64_t temp = 0;
+        renamed_reg = head_inst->renamedSrcRegIdx(src_idx); 
+        if(renamed_reg->isIntPhysReg() == true) {
+            temp = cpu->readIntReg(renamed_reg);
+            std::cout<<"commithead::src op["<<src_idx<<"] value is:"<<temp<<" "<<" arch reg:"<<src_reg.index()<<" physical reg:"<<renamed_reg->index()<<"(flat:"<<renamed_reg->flatIndex()<<")"<<std::endl;
+        }
+    }
+
+    unsigned num_dest_regs = head_inst->numDestRegs(); 
+    for (int dest_idx = 0; dest_idx < num_dest_regs; dest_idx++) {
+        const RegId& dest_reg = head_inst->destRegIdx(dest_idx);
+        PhysRegIdPtr renamed_reg;
+        uint64_t temp = 0;
+        renamed_reg = head_inst->renamedDestRegIdx(dest_idx); 
+        if(renamed_reg->isIntPhysReg() == true) {
+            temp = cpu->readIntReg(renamed_reg);
+            std::cout<<"commithead:: dest op["<<dest_idx<<"] value is:"<<temp<<" "<<" arch reg:"<<dest_reg.index()<<" physical reg:"<<renamed_reg->index()<<"(flat:"<<renamed_reg->flatIndex()<<")"<<std::endl;
+        }
+    }
+    std::cout<<std::endl;
+
+
+
+
     ThreadID tid = head_inst->threadNumber;
 
     // If the instruction is not executed yet, then it will need extra

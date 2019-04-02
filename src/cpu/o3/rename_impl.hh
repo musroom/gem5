@@ -773,7 +773,7 @@ DefaultRename<Impl>::renameInsts(ThreadID tid)
         }
         
         
-        if(gateLTP[tid] == true && park_count < maxSecRename && (inst->urgent == false || findSrcParkBit(inst) == true)){
+        if(gateLTP[tid] == true && (inst->urgent == false || findSrcParkBit(inst) == true)){
              //write in to RAT :set pc and set park bit in Rat
             fillInRAT(inst);            
              //insert into LTP
@@ -1012,7 +1012,8 @@ DefaultRename<Impl>::doSquash(const InstSeqNum &squashed_seq_num, ThreadID tid)
 {
     typename std::list<RenameHistory>::iterator hb_it =
         historyBuffer[tid].begin();
-
+    DPRINTF(Rename, "[tid:%u]: history buffer's begin "
+        "seq number %i.\n", tid, hb_it->instSeqNum);
     // After a syscall squashes everything, the history buffer may be empty
     // but the ROB may still be squashing instructions.
     // Go through the most recent instructions, undoing the mappings
@@ -1051,7 +1052,7 @@ DefaultRename<Impl>::doSquash(const InstSeqNum &squashed_seq_num, ThreadID tid)
     }
     //squash LTP
     for(int i=0;i<secRenameQueue[tid].size();i++) {
-        if(secRenameQueue[tid].front()->seqNum > squashed_seq_num) {
+        if(secRenameQueue[tid].front()->seqNum >= squashed_seq_num) {
             secRenameQueue[tid].pop();
         } else {
             break;
@@ -1059,7 +1060,7 @@ DefaultRename<Impl>::doSquash(const InstSeqNum &squashed_seq_num, ThreadID tid)
     }
  
     for(int i=0;i<LTP[tid].size();i++) {
-        if(LTP[tid].front()->seqNum > squashed_seq_num) {
+        if(LTP[tid].front()->seqNum >= squashed_seq_num) {
             LTP[tid].pop();
         } else {
             break;
@@ -1182,11 +1183,12 @@ DefaultRename<Impl>::renameSrcRegs(const DynInstPtr &inst, ThreadID tid)
                     renamed_reg->className());
 
             inst->markSrcRegReady(src_idx);
+            /*
             uint64_t temp = 0;
             if(renamed_reg->isIntPhysReg() == true) {
                 cpu->readIntReg(renamed_reg);
                 std::cout<<"SN"<<inst->seqNum<<"get source op["<<src_idx<<"] value is:"<<temp<<std::endl;
-            }
+            }*/
         } else {
             DPRINTF(Rename, "[tid:%u]: Register %d (flat: %d) (%s)"
                     " is not ready.\n", tid, renamed_reg->index(),
