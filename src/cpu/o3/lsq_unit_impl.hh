@@ -833,7 +833,11 @@ LSQUnit<Impl>::squash(const InstSeqNum &squashed_num)
 {
     DPRINTF(LSQUnit, "Squashing until [sn:%lli]!"
             "(Loads:%i Stores:%i)\n", squashed_num, loads, stores);
-
+    /*if(loads !=0 ){
+        DPRINTF(LSQUnit,"back instruction[sn:%lli],squashed_num[sn:%lli]\n",
+            loadQueue.back().instruction()->seqNum,squashed_num);
+    }*/
+         
     while (loads != 0 &&
             loadQueue.back().instruction()->seqNum > squashed_num) {
         DPRINTF(LSQUnit,"Load Instruction PC %s squashed, "
@@ -856,11 +860,21 @@ LSQUnit<Impl>::squash(const InstSeqNum &squashed_num)
         loadQueue.pop_back();
         ++lsqSquashedLoads;
     }
-
+    /*
+    if(memDepViolator) {
+        DPRINTF(LSQUnit,"memDepViolator seqNum[sn:%lli],squashed_num[sn:%lli]\n",
+            memDepViolator->seqNum,squashed_num);
+    }else {
+        
+        DPRINTF(LSQUnit,"memDepViolator is NULL\n");
+    }*/
     if (memDepViolator && squashed_num < memDepViolator->seqNum) {
         memDepViolator = NULL;
     }
-    DPRINTF(LSQUnit,"now strorequque.back:%d",storeQueue.back().instruction()->seqNum);
+    
+    if(stores !=0){
+        DPRINTF(LSQUnit,"now storequeue.back:%d\n",storeQueue.back().instruction()->seqNum);
+    }
     while (stores != 0 &&
            storeQueue.back().instruction()->seqNum > squashed_num) {
         // Instructions marked as can WB are already committed.

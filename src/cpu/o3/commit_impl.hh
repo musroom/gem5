@@ -1653,40 +1653,25 @@ DefaultCommit<Impl>::wakeUpInsts()
 {
     int wakeup_num = 0;
     bool back = false;
-    if(rob->isEmpty()) return;
-    //if head in LTP wake up 
-    /*if((*(rob->head))->urgent == false || (*(rob->head))->noNeedExe == true) {
+    if(rob->isEmpty()) {
+        DPRINTF(Commit,"rob is empty no need to wake up");
+        DPRINTF(Commit,"wake up insts this cycle:\n",wakeup_num);
+        return;
+    }
+    
+    // if head is in LTP so wake up first     
+    if((*(rob->head))->noNeedExe == true) {
         back = renameStage->wakeUpInst((*(rob->head)));
         if(back == true) {
             DPRINTF(Commit,"head is non-urgent and in LTP success wake up "
-                "head seqNum[sn:%lli].\n", (*(rob->head))->seqNum);
+                "head seqNum[sn:%lli],LTP[%d].\n", (*(rob->head))->seqNum,(*(rob->head))->noNeedExe);
             wakeup_num ++;
         }else{
-            DPRINTF(Commit, "head is non-urgent but in LTP,failed LTP head is not this inst "
-                "inst [sn:%lli]\n",(*(rob->head))->seqNum);
+            DPRINTF(Commit, "head is non-urgent and in LTP,failed wake up,LTP head is not"
+                " this inst [sn:%lli],,LTP[%d].\n",(*(rob->head))->seqNum,(*(rob->head))->noNeedExe);
+            return;    
         }
-        return;
-    }else if((*(rob->head))->urgent == false) {
-        
-        DPRINTF(Commit, "Head is not urgent, Don't need wake up insts this cycle");
-        return;
-    }*/
-    if((*(rob->head))->urgent == false) {
-        if((*(rob->head))->noNeedExe == true) {
-            back = renameStage->wakeUpInst((*(rob->head)));
-            if(back == true) {
-                DPRINTF(Commit,"head is non-urgent and in LTP success wake up "
-                    "head seqNum[sn:%lli].\n", (*(rob->head))->seqNum);
-                wakeup_num ++;
-            }else{
-                DPRINTF(Commit, "head is non-urgent but in LTP,failed LTP head is not this inst "
-                "inst [sn:%lli]\n",(*(rob->head))->seqNum);
-            }
-        }
-        DPRINTF(Commit,"wake up insts this cycle:\n",wakeup_num);
-        return;
-   }
-   
+    }
 
 
     list<ThreadID>::iterator threads = activeThreads->begin();
@@ -1707,19 +1692,6 @@ DefaultCommit<Impl>::wakeUpInsts()
         }
     }
  
-    //if head is urgent and in LTP wake up,to wake up instruction is urgent and in LTP  
-    if((*(rob->head))->noNeedExe == true) {
-        back = renameStage->wakeUpInst((*(rob->head)));
-        if(back == true) {
-            DPRINTF(Commit,"head is urgent and in LTP,success wake up head seqNum[sn:%lli]"
-                ".\n", (*(rob->head))->seqNum);
-            wakeup_num ++;
-        }else{
-            DPRINTF(Commit, "head is urgent and in LTP,wake up head failed the reason is "
-                "upon inst [sn:%lli]\n",(*(rob->head))->seqNum);
-
-        }
-    }
 
     int index = 0;
     int min_index = 0;
@@ -1730,9 +1702,8 @@ DefaultCommit<Impl>::wakeUpInsts()
         min_index = 0;
         first_valid = true;
         lowest_num = 0;
-
-        for(index = 0,iter = activeThreads->begin();index<point_vector.size()&&iter!=activeThreads->end();
-            index ++,iter++){
+        // go over each thread 's head find the min seqnum
+        for(index = 0,iter = activeThreads->begin();index<point_vector.size()&&iter!=activeThreads->end();index ++,iter++){
             ThreadID tid = *iter;
             if(rob->isEmpty(tid)){
                 continue;
@@ -1762,12 +1733,16 @@ DefaultCommit<Impl>::wakeUpInsts()
         
         back = renameStage->wakeUpInst(temp_inst1);
         if(back == true) {
-            DPRINTF(Commit,"in commit,success wake up seqNum[sn:%lli]"
+            DPRINTF(Commit,"in commit,not head rob,success wake up seqNum[sn:%lli]"
                 ".\n", temp_inst1->seqNum);
             wakeup_num ++;
         }else{
-            DPRINTF(Commit, "in commit,wake up failed the reason is upon "
-                "inst [sn:%lli]\n",temp_inst1->seqNum);
+            DPRINTF(Commit, "in commit,not head rob,wake up failed"
+                "inst [sn:%lli],LTP[%d]\n",temp_inst1->seqNum,temp_inst1->noNeedExe);
+            // if this instruction is wake up failed, improve that this 
+            // instruction was been waked up 
+            //if(temp_inst1->noNeedExe == true) break;
+            break;
 
         }
         point_vector[min_index] ++;

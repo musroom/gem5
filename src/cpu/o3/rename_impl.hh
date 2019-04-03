@@ -781,7 +781,8 @@ DefaultRename<Impl>::renameInsts(ThreadID tid)
              
              //set NoneedExe 
             inst->noNeedExe = true;
-            park_count ++;     
+            park_count ++;    
+             
         }else{
 
             renameSrcRegs(inst, inst->threadNumber);
@@ -1051,21 +1052,27 @@ DefaultRename<Impl>::doSquash(const InstSeqNum &squashed_seq_num, ThreadID tid)
         ++renameUndoneMaps;
     }
     //squash LTP
-    for(int i=0;i<secRenameQueue[tid].size();i++) {
+    while(secRenameQueue[tid].empty()!= true) {
         if(secRenameQueue[tid].front()->seqNum >= squashed_seq_num) {
+            DPRINTF(Rename, "[tid:%u]: Removing inst seqNum:%i in secRenameQueue.\n"
+                ,tid, secRenameQueue[tid].front()->seqNum);
             secRenameQueue[tid].pop();
         } else {
             break;
         }
     }
+    DPRINTF(Rename,"[tid:%u]:secRenameQueue size is %d\n",tid,secRenameQueue[tid].size()); 
  
-    for(int i=0;i<LTP[tid].size();i++) {
+    while(LTP[tid].empty()!=true) {
         if(LTP[tid].front()->seqNum >= squashed_seq_num) {
+            DPRINTF(Rename, "[tid:%u]: Removing inst seqNum:%i in LTP.\n"
+                ,tid, LTP[tid].front()->seqNum);
             LTP[tid].pop();
         } else {
             break;
         }
     }
+    DPRINTF(Rename,"[tid:%u]:LTP size is %d\n",tid,LTP[tid].size()); 
 
     // Check if we need to change vector renaming mode after squashing
     cpu->switchRenameMode(tid, freeList);
@@ -1597,10 +1604,13 @@ bool
 DefaultRename<Impl>::insertLTP(DynInstPtr &inst,ThreadID tid)
 {
     if(LTP[tid].size() >= LTPMax) {
+        DPRINTF(Rename, "the LTP is full wake up inst.\n");
         wakeUpInst(LTP[tid].front());
         LTP[tid].pop();
     }
     LTP[tid].push(inst);
+    DPRINTF(Rename, "insert LTP LTP size:%d,secRenameQueue size:%d,sn:%i.\n",
+        LTP[tid].size(),secRenameQueue[tid].size(),inst->seqNum);
     return true;
 }
 
@@ -1610,18 +1620,24 @@ DefaultRename<Impl>::wakeUpInst(DynInstPtr &inst)
 {
     ThreadID tid = inst->threadNumber;
     if(LTP[tid].empty() == true) {
-        DPRINTF(Rename, "the LTP is empty cannot wakeup.\n");
+        DPRINTF(Rename, "the LTP is empty cannot wakeup,sn:%i.\n",inst->seqNum);
      
         return false;
     }
     DynInstPtr inst_top = LTP[tid].front();  
     
-    if(inst->seqNum != inst_top->seqNum) return false;
+    if(inst->seqNum != inst_top->seqNum) {
+        DPRINTF(Rename, "the LTP top is not this seq [sn:%i].\n",inst->seqNum);
+        DPRINTF(Rename, "wake up LTP ,LTP size:%d,secRenameQueue size:%d.\n",
+            LTP[tid].size(),secRenameQueue[tid].size());
+        return false;
+    }
     
     LTP[tid].pop();
     secRenameQueue[tid].push(inst_top);
-    DPRINTF(Rename, "[tid:%u]:waiting in waked up queue.\n",tid);
-
+    DPRINTF(Rename, "[tid:%u]:waiting in waked up queue sn:%i\n",tid,inst->seqNum);
+    DPRINTF(Rename, "wake up LTP ,LTP size:%d,secRenameQueue size:%d.\n",
+        LTP[tid].size(),secRenameQueue[tid].size());
     return true;
    
 }
