@@ -775,6 +775,11 @@ DefaultRename<Impl>::renameInsts(ThreadID tid)
         
         if(gateLTP[tid] == true && (inst->urgent == false || findSrcParkBit(inst) == true)){
              //write in to RAT :set pc and set park bit in Rat
+            if(inst->urgent == false) {
+                DPRINTF(Rename,"park into LTP because of inst is non-urgent [sn:%i]\n",inst->seqNum);
+            } else {
+                DPRINTF(Rename,"park into LTP because of source have parkBit [sn:%i]\n",inst->seqNum);
+            }
             bool resu = fillInRAT(inst);
             DPRINTF(Rename,"fill in RAT success:%d\n",resu);            
              //insert into LTP
@@ -1576,7 +1581,7 @@ DefaultRename<Impl>::openLTP(ThreadID tid)
 {
     if(gateLTP[tid] == true) return;
     else gateLTP[tid] = true;
-    DPRINTF(Rename,"[tid:%u]:open LTP");
+    DPRINTF(Rename,"[tid:%u]:open LTP",tid);
 }
 
 
@@ -1587,7 +1592,7 @@ DefaultRename<Impl>::closeLTP(ThreadID tid)
 {
     if(gateLTP[tid] == false) return;
     else gateLTP[tid] = false;
-    DPRINTF(Rename,"[tid:%u]:close LTP");
+    DPRINTF(Rename,"[tid:%u]:close LTP",tid);
 }
 
 //get LTP status
@@ -1704,7 +1709,7 @@ DefaultRename<Impl>::renameWakeUpInsts(ThreadID tid)
 
         //For all kind of instructions, check ROB and IQ first
         //For load instruction, check LQ size and take into account the inflight loads
-        //For store instruction, check SQ size and take into account the inflight stores
+        //For store iestruction, check SQ size and take into account the inflight stores
 
         if (inst->isLoad()) {
             if (calcFreeLQEntries(tid) <= 0) {

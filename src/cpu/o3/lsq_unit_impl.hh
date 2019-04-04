@@ -1161,7 +1161,7 @@ LSQUnit<Impl>::setLTP(Cycles curCycle,uint8_t depth,ThreadID tid)
         else renameStage->closeLTP(tid);
     }
     
-    DPRINTF(LSQUnit, "Timer value %d,LTP status\n",timer,sta);
+    DPRINTF(LSQUnit, "Timer value %d,LTP is open:[%d]\n",timer,sta);
     //std::cout<<"Timer: "<<timer<<" "<<"status: "<<sta<<std::endl;
 }
     

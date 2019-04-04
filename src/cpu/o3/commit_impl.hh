@@ -1669,7 +1669,7 @@ DefaultCommit<Impl>::wakeUpInsts()
         }else{
             DPRINTF(Commit, "head is non-urgent and in LTP,failed wake up,LTP head is not"
                 " this inst [sn:%lli],LTP[%d].\n",(*(rob->head))->seqNum,(*(rob->head))->noNeedExe);
-            return;    
+            //return;    
         }
     }
 
@@ -1742,7 +1742,7 @@ DefaultCommit<Impl>::wakeUpInsts()
             // if this instruction is wake up failed, improve that this 
             // instruction was been waked up 
             //if(temp_inst1->noNeedExe == true) break;
-            break;
+            //break;
 
         }
         point_vector[min_index] ++;
