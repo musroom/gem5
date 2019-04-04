@@ -775,14 +775,15 @@ DefaultRename<Impl>::renameInsts(ThreadID tid)
         
         if(gateLTP[tid] == true && (inst->urgent == false || findSrcParkBit(inst) == true)){
              //write in to RAT :set pc and set park bit in Rat
-            fillInRAT(inst);            
+            bool resu = fillInRAT(inst);
+            DPRINTF(Rename,"fill in RAT success:%d\n",resu);            
              //insert into LTP
-            insertLTP(inst,tid);
+            resu = insertLTP(inst,tid);
+            DPRINTF(Rename,"insert in LTP success:%d\n",resu);            
              
              //set NoneedExe 
             inst->noNeedExe = true;
-            park_count ++;    
-             
+            park_count ++; 
         }else{
 
             renameSrcRegs(inst, inst->threadNumber);
@@ -1606,11 +1607,10 @@ DefaultRename<Impl>::insertLTP(DynInstPtr &inst,ThreadID tid)
     if(LTP[tid].size() >= LTPMax) {
         DPRINTF(Rename, "the LTP is full wake up inst.\n");
         wakeUpInst(LTP[tid].front());
-        LTP[tid].pop();
     }
     LTP[tid].push(inst);
-    DPRINTF(Rename, "insert LTP LTP size:%d,secRenameQueue size:%d,sn:%i.\n",
-        LTP[tid].size(),secRenameQueue[tid].size(),inst->seqNum);
+    DPRINTF(Rename, "insert LTP LTP size:%d,secRenameQueue size:%d,sn:%i,LTP top is sn:%i.",
+        LTP[tid].size(),secRenameQueue[tid].size(),inst->seqNum,LTP[tid].front()->seqNum);
     return true;
 }
 
@@ -1627,17 +1627,15 @@ DefaultRename<Impl>::wakeUpInst(DynInstPtr &inst)
     DynInstPtr inst_top = LTP[tid].front();  
     
     if(inst->seqNum != inst_top->seqNum) {
-        DPRINTF(Rename, "the LTP top is not this seq [sn:%i].\n",inst->seqNum);
-        DPRINTF(Rename, "wake up LTP ,LTP size:%d,secRenameQueue size:%d.\n",
-            LTP[tid].size(),secRenameQueue[tid].size());
+        DPRINTF(Rename, "the LTP top is not this seq [sn:%i].the top is sn:%i,LTP size:%d,secRenameQueue size:%d. \n",
+            inst->seqNum,inst_top->seqNum,LTP[tid].size(),secRenameQueue[tid].size());
         return false;
     }
     
     LTP[tid].pop();
     secRenameQueue[tid].push(inst_top);
-    DPRINTF(Rename, "[tid:%u]:waiting in waked up queue sn:%i\n",tid,inst->seqNum);
-    DPRINTF(Rename, "wake up LTP ,LTP size:%d,secRenameQueue size:%d.\n",
-        LTP[tid].size(),secRenameQueue[tid].size());
+    DPRINTF(Rename, "[tid:%u]:waiting in waked up queue sn:%i,LTP size:%d,secRenameQueue size:%d:\n"
+           ,tid,inst->seqNum,LTP[tid].size(),secRenameQueue[tid].size());
     return true;
    
 }
@@ -1661,9 +1659,10 @@ DefaultRename<Impl>::renameWakeUpInsts(ThreadID tid)
 
     // Will have to do a different calculation for the number of free
     // entries.
-    int free_rob_entries = calcFreeROBEntries(tid);
+    //int free_rob_entries = calcFreeROBEntries(tid);
     int free_iq_entries  = calcFreeIQEntries(tid);
-    int min_free_entries = free_rob_entries;
+    //int min_free_entries = free_rob_entries;
+    int min_free_entries = free_iq_entries;
 
     //FullSource source = ROB;
 
@@ -1674,12 +1673,10 @@ DefaultRename<Impl>::renameWakeUpInsts(ThreadID tid)
 
     // Check if there's any space left.
     if (min_free_entries <= 0) {
-        DPRINTF(Rename, "[tid:%u]:  Rename wake up insts, Blocking due to no free ROB/IQ/ "
+        DPRINTF(Rename, "[tid:%u]:  Rename wake up insts, Blocking due to no free IQ/ "
                 "entries.\n"
-                "ROB has %i free entries.\n"
                 "IQ has %i free entries.\n",
                 tid,
-                free_rob_entries,
                 free_iq_entries);
         return;
     } else if (min_free_entries < insts_avail) {
@@ -1824,7 +1821,7 @@ DefaultRename<Impl>::renameWakeUpInsts(ThreadID tid)
         ppRename->notify(inst);
        
         inst->noNeedExe = false;
-        inst->fromLTP = true;
+        //inst->fromLTP = true;
         // Put instruction in rename queue.
         toIEWW->insts[toIEWWIndex] = inst;
         ++(toIEWW->size);

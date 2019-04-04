@@ -1668,7 +1668,7 @@ DefaultCommit<Impl>::wakeUpInsts()
             wakeup_num ++;
         }else{
             DPRINTF(Commit, "head is non-urgent and in LTP,failed wake up,LTP head is not"
-                " this inst [sn:%lli],,LTP[%d].\n",(*(rob->head))->seqNum,(*(rob->head))->noNeedExe);
+                " this inst [sn:%lli],LTP[%d].\n",(*(rob->head))->seqNum,(*(rob->head))->noNeedExe);
             return;    
         }
     }
