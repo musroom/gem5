@@ -325,7 +325,8 @@ class DefaultRename
          */
         PhysRegIdPtr prevPhysReg;
     };
-
+    
+    typedef typename std::list<RenameHistory>::iterator HisIt;
     /** A per-thread list of all destination register renames, used to either
      * undo rename mappings or free old physical registers.
      */

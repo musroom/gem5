@@ -1729,7 +1729,7 @@ DefaultCommit<Impl>::wakeUpInsts()
         DynInstPtr temp_inst1 = *(point_vector[min_index]);
 
         
-        if(temp_inst1->urgent == true) break;
+        if(temp_inst1->urgent == true && temp_inst1->fromLTP == false) break;
         
         back = renameStage->wakeUpInst(temp_inst1);
         if(back == true) {

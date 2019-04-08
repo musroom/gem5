@@ -91,7 +91,7 @@ DefaultRename<Impl>::DefaultRename(O3CPU *_cpu, DerivO3CPUParams *params)
         serializeOnNextInst[tid] = false;
         gateLTP[tid] = false;
     }
-    maxSecRename = 4;
+    maxSecRename = 8;
     instsWakeNum = 0;
 
 }
@@ -786,7 +786,8 @@ DefaultRename<Impl>::renameInsts(ThreadID tid)
             resu = insertLTP(inst,tid);
             DPRINTF(Rename,"insert in LTP success:%d\n",resu);            
              
-             //set NoneedExe 
+             //set NoneedExe
+            inst->fromLTP = true; 
             inst->noNeedExe = true;
             park_count ++; 
         }else{
@@ -806,7 +807,7 @@ DefaultRename<Impl>::renameInsts(ThreadID tid)
             // this instruction have been renamed.
             ppRename->notify(inst);
             inst->noNeedExe = false;
-             
+            inst->fromLTP = false;
             toIEWW->insts[toIEWWIndex] = inst;
             ++(toIEWW->size);
             // Increment which instruction we're on.
@@ -1572,6 +1573,7 @@ DefaultRename<Impl>::dumpHistory()
             buf_it++;
         }
     }
+    cprintf("\n");
 }
 
 
@@ -1614,7 +1616,7 @@ DefaultRename<Impl>::insertLTP(DynInstPtr &inst,ThreadID tid)
         wakeUpInst(LTP[tid].front());
     }
     LTP[tid].push(inst);
-    DPRINTF(Rename, "insert LTP LTP size:%d,secRenameQueue size:%d,sn:%i,LTP top is sn:%i.",
+    DPRINTF(Rename, "insert LTP LTP size:%d,secRenameQueue size:%d,sn:%i,LTP top is sn:%i.\n",
         LTP[tid].size(),secRenameQueue[tid].size(),inst->seqNum,LTP[tid].front()->seqNum);
     return true;
 }
@@ -1885,8 +1887,21 @@ DefaultRename<Impl>::renameDestRegsSec(const DynInstPtr &inst, ThreadID tid)
         RenameHistory hb_entry(inst->seqNum, flat_dest_regid,
                                rename_result.first,
                                rename_result.second);
-
-        historyBuffer[tid].push_front(hb_entry);
+         
+        if(historyBuffer[tid].empty() == true || historyBuffer[tid].front().instSeqNum < inst->seqNum) {
+            historyBuffer[tid].push_front(hb_entry);
+        } else if(historyBuffer[tid].back().instSeqNum > inst->seqNum){
+            historyBuffer[tid].push_back(hb_entry);
+        }else {
+            HisIt iter=historyBuffer[tid].begin();
+            for(iter=historyBuffer[tid].begin();iter!=historyBuffer[tid].end();iter ++) {
+                if(iter->instSeqNum <= inst->seqNum) break;
+            }
+            historyBuffer[tid].insert(iter,hb_entry);
+        }
+            
+     
+        //historyBuffer[tid].push_front(hb_entry);
 
         DPRINTF(Rename, "[tid:%u]: Adding instruction to history buffer "
                 "(size=%i), [sn:%lli].\n",tid,
@@ -1904,6 +1919,7 @@ DefaultRename<Impl>::renameDestRegsSec(const DynInstPtr &inst, ThreadID tid)
 
         ++renameRenamedOperands;
     }
+    dumpHistory();
 }
 
 template <class Impl>
