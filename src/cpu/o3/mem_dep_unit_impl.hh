@@ -206,7 +206,7 @@ MemDepUnit<MemDepPred, Impl>::insert(const DynInstPtr &inst)
     MemDepEntryPtr store_entry = NULL;
 
     // If there is a producing store, try to find the entry.
-    if (producing_store != 0) {
+    if (producing_store != 0 && producing_store < inst->seqNum) {
         DPRINTF(MemDepUnit, "Searching for producer\n");
         MemDepHashIt hash_it = memDepHash.find(producing_store);
 
@@ -238,8 +238,8 @@ MemDepUnit<MemDepPred, Impl>::insert(const DynInstPtr &inst)
    
         // Otherwise make the instruction dependent on the store/barrier.
         DPRINTF(MemDepUnit, "Adding to dependency list; "
-                "inst PC %s is dependent on [sn:%lli].\n",
-                inst->pcState(), producing_store);
+                "inst PC %s [sn:%lli],is dependent on [sn:%lli].\n",
+                inst->pcState(), inst->seqNum,producing_store);
 
         if (inst->readyToIssue()) {
             inst_entry->regsReady = true;
@@ -476,7 +476,9 @@ MemDepUnit<MemDepPred, Impl>::wakeDependents(const DynInstPtr &inst)
         DPRINTF(MemDepUnit, "Waking up a dependent inst, "
                 "[sn:%lli].\n",
                 woken_inst->inst->seqNum);
-
+        if(woken_inst->squashed){
+            DPRINTF(MemDepUnit,"waking inst inst is squashed,[sn:%lli]\n",woken_inst->inst->seqNum);
+        }
         if (woken_inst->regsReady && !woken_inst->squashed) {
             moveToReady(woken_inst);
         } else {
