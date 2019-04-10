@@ -1161,7 +1161,8 @@ DefaultCommit<Impl>::commitHead(const DynInstPtr &head_inst, unsigned inst_num)
 {
     assert(head_inst);
     
-    std::cout<<"commithead:: SN:"<<head_inst->seqNum<<" val:"<<head_inst->res<<" ";
+    //std::cout<<"commithead:: SN:"<<head_inst->seqNum<<" val:"<<head_inst->res<<" ";
+    std::cout<<"resultvalue:"<<head_inst->res<<" ";
     head_inst->dump();
 
     unsigned num_src_regs = head_inst->numSrcRegs();

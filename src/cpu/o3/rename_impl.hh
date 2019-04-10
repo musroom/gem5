@@ -1887,7 +1887,7 @@ DefaultRename<Impl>::renameDestRegsSec(const DynInstPtr &inst, ThreadID tid)
         RenameHistory hb_entry(inst->seqNum, flat_dest_regid,
                                rename_result.first,
                                rename_result.second);
-         
+        
         if(historyBuffer[tid].empty() == true || historyBuffer[tid].front().instSeqNum < inst->seqNum) {
             historyBuffer[tid].push_front(hb_entry);
         } else if(historyBuffer[tid].back().instSeqNum > inst->seqNum){
@@ -1899,7 +1899,7 @@ DefaultRename<Impl>::renameDestRegsSec(const DynInstPtr &inst, ThreadID tid)
             }
             historyBuffer[tid].insert(iter,hb_entry);
         }
-            
+          
      
         //historyBuffer[tid].push_front(hb_entry);
 
@@ -1919,7 +1919,7 @@ DefaultRename<Impl>::renameDestRegsSec(const DynInstPtr &inst, ThreadID tid)
 
         ++renameRenamedOperands;
     }
-    dumpHistory();
+    //dumpHistory();
 }
 
 template <class Impl>

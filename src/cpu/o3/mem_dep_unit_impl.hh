@@ -207,6 +207,7 @@ MemDepUnit<MemDepPred, Impl>::insert(const DynInstPtr &inst)
 
     // If there is a producing store, try to find the entry.
     if (producing_store != 0 && producing_store < inst->seqNum) {
+    //if (producing_store != 0) {
         DPRINTF(MemDepUnit, "Searching for producer\n");
         MemDepHashIt hash_it = memDepHash.find(producing_store);
 

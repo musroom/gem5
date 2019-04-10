@@ -596,8 +596,8 @@ InstructionQueue<Impl>::insert(const DynInstPtr &new_inst)
 
     assert(freeEntries != 0);
 
-    instList[new_inst->threadNumber].push_back(new_inst);
-
+    //instList[new_inst->threadNumber].push_back(new_inst);
+    insertInstInOrder(new_inst);
     --freeEntries;
 
     new_inst->setInIQ();
@@ -647,8 +647,9 @@ InstructionQueue<Impl>::insertNonSpec(const DynInstPtr &new_inst)
 
     assert(freeEntries != 0);
 
-    instList[new_inst->threadNumber].push_back(new_inst);
+    //instList[new_inst->threadNumber].push_back(new_inst);
 
+    insertInstInOrder(new_inst);
     --freeEntries;
 
     new_inst->setInIQ();
@@ -803,6 +804,21 @@ InstructionQueue<Impl>::scheduleReadyInsts()
     int total_issued = 0;
     ListOrderIt order_it = listOrder.begin();
     ListOrderIt order_end_it = listOrder.end();
+    
+    //add to debug
+    DPRINTF(IQ,"total_issued:%d,totalWidth:%d,listOrder size:%d\n",total_issued,totalWidth,
+        listOrder.size());
+    std::cout<<"print list"<<std::endl;
+    dumpLists();
+    std::cout<<std::endl;
+
+    std::cout<<"print inst"<<std::endl;
+    dumpInsts();
+    std::cout<<std::endl;
+ 
+    
+
+
 
     while (total_issued < totalWidth && order_it != order_end_it) {
         OpClass op_class = (*order_it).queueType;
@@ -810,7 +826,7 @@ InstructionQueue<Impl>::scheduleReadyInsts()
         assert(!readyInsts[op_class].empty());
 
         DynInstPtr issuing_inst = readyInsts[op_class].top();
-
+        DPRINTF(IQ,"try to shedule instruction [sn:%lli]\n",issuing_inst->seqNum);
         if (issuing_inst->isFloating()) {
             fpInstQueueReads++;
         } else if (issuing_inst->isVector()) {
@@ -980,6 +996,7 @@ InstructionQueue<Impl>::commit(const InstSeqNum &inst, ThreadID tid)
 
     while (iq_it != instList[tid].end() &&
            (*iq_it)->seqNum <= inst) {
+        DPRINTF(IQ,"in Committing older,pop from instlist [sn:%i]\n",(*iq_it)->seqNum);
         ++iq_it;
         instList[tid].pop_front();
     }
@@ -1226,8 +1243,12 @@ InstructionQueue<Impl>::doSquash(ThreadID tid)
     // given.
     while (squash_it != instList[tid].end() &&
            (*squash_it)->seqNum > squashedSeqNum[tid]) {
-
+        
         DynInstPtr squashed_inst = (*squash_it);
+
+        DPRINTF(IQ,"try to squash instruction [sn:%lli],isSquashedInIQ()[%d],"
+            "thread num[tid:%i]\n",squashed_inst->seqNum,squashed_inst->isSquashedInIQ(),
+            squashed_inst->threadNumber);
         if (squashed_inst->isFloating()) {
             fpInstQueueWrites++;
         } else if (squashed_inst->isVector()) {
@@ -1241,6 +1262,9 @@ InstructionQueue<Impl>::doSquash(ThreadID tid)
         if (squashed_inst->threadNumber != tid ||
             squashed_inst->isSquashedInIQ()) {
             --squash_it;
+            DPRINTF(IQ,"try to squash instruction continue [sn:%lli],isSquashedInIQ()[%d],"
+                "thread num[tid:%i]\n",squashed_inst->seqNum,squashed_inst->isSquashedInIQ(),
+                squashed_inst->threadNumber);
             continue;
         }
 
@@ -1644,6 +1668,24 @@ InstructionQueue<Impl>::dumpInsts()
 
         inst_list_it++;
         ++num;
+    }
+}
+
+template <class Impl>
+void
+InstructionQueue<Impl>::insertInstInOrder(const DynInstPtr &new_inst) {
+    ThreadID tid = new_inst->threadNumber;
+
+    if(instList[tid].empty() == true || instList[tid].front()->seqNum > new_inst->seqNum) {
+        instList[tid].push_front(new_inst);
+    } else if(instList[tid].back()->seqNum < new_inst->seqNum){
+        instList[tid].push_back(new_inst);
+    }else {
+        InstIt iter=instList[tid].begin();
+        for(iter=instList[tid].begin();iter!=instList[tid].end();iter ++) {
+            if((*iter)->seqNum >= new_inst->seqNum) break;
+        }
+        instList[tid].insert(iter,new_inst);
     }
 }
 

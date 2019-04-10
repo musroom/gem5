@@ -1590,15 +1590,18 @@ DefaultIEW<Impl>::tick()
             updateLSQNextCycle = true;
             instQueue.commit(fromCommit->commitInfo[tid].doneSeqNum,tid);
         }
-
+        
+        DPRINTF(IEW,"nonSpecSeqNum: [sn:%lli]",fromCommit->commitInfo[tid].nonSpecSeqNum);
         if (fromCommit->commitInfo[tid].nonSpecSeqNum != 0) {
 
-            //DPRINTF(IEW,"NonspecInst from thread %i",tid);
+            DPRINTF(IEW,"NonspecInst from thread %i,nonSpecSeqNum: [sn:%lli]",tid,fromCommit->commitInfo[tid].nonSpecSeqNum);
             if (fromCommit->commitInfo[tid].strictlyOrdered) {
                 instQueue.replayMemInst(
                     fromCommit->commitInfo[tid].strictlyOrderedLoad);
                 fromCommit->commitInfo[tid].strictlyOrderedLoad->setAtCommit();
+                DPRINTF(IEW,"nonSpecSeqNum != 0,replayMemInst");
             } else {
+                DPRINTF(IEW,"nonSpecSeqNum != 0,scheduleNonSpec");
                 instQueue.scheduleNonSpec(
                     fromCommit->commitInfo[tid].nonSpecSeqNum);
             }

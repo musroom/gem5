@@ -314,7 +314,9 @@ class InstructionQueue
 
     /** List of all the instructions in the IQ (some of which may be issued). */
     std::list<DynInstPtr> instList[Impl::MaxThreads];
-
+  
+    typedef typename std::list<DynInstPtr>::iterator InstIt;
+    
     /** List of instructions that are ready to be executed. */
     std::list<DynInstPtr> instsToExecute;
 
@@ -545,6 +547,8 @@ class InstructionQueue
     Stats::Scalar intAluAccesses;
     Stats::Scalar fpAluAccesses;
     Stats::Scalar vecAluAccesses;
+  private:
+    void insertInstInOrder(const DynInstPtr &new_inst);
 };
 
 #endif //__CPU_O3_INST_QUEUE_HH__
