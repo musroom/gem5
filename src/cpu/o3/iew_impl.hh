@@ -847,15 +847,15 @@ DefaultIEW<Impl>::sortInsts()
 {
     int insts_from_rename = fromRename->size;
     int for_debug_count = 0;
-    std::cout<<"in iew ,inst_from_rename size:"<<insts_from_rename<<std::endl;
+    //std::cout<<"in iew ,inst_from_rename size:"<<insts_from_rename<<std::endl;
 #ifdef DEBUG
     for (ThreadID tid = 0; tid < numThreads; tid++)
         assert(insts[tid].empty());
 #endif
-    std::cout<<"in iew "<<std::endl;
+    //std::cout<<"in iew "<<std::endl;
     for (int i = 0; i < insts_from_rename; ++i) {
-        std::cout<<fromRename->insts[i]->noNeedExe<<" ";
-        fromRename->insts[i]->dump();
+        //std::cout<<fromRename->insts[i]->noNeedExe<<" ";
+        //fromRename->insts[i]->dump();
         /*if(fromRename->insts[i]->noNeedExe == true) {
             toRename->iewInfo[fromRename->insts[i]->threadNumber].toRobCount++;   
             continue;
@@ -863,7 +863,7 @@ DefaultIEW<Impl>::sortInsts()
         insts[fromRename->insts[i]->threadNumber].push(fromRename->insts[i]);
         for_debug_count ++;
     }
-    std::cout<<"in iew sorted inst, get exe inst:"<<for_debug_count<<std::endl;
+    //std::cout<<"in iew sorted inst, get exe inst:"<<for_debug_count<<std::endl;
 }
 
 template <class Impl>

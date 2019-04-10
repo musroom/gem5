@@ -698,7 +698,7 @@ DefaultCommit<Impl>::tick()
         ThreadID tid = *threads++;
         int value = std::min((int)renameWidth, fromRename->size);
         if(toIEW->commitInfo[tid].getFromRename == 0) toIEW->commitInfo[tid].getFromRename = value;
-        std::cout<<"in commit,getFromRename:"<<toIEW->commitInfo[tid].getFromRename<<"renamequeue:"<<fromRename->size;
+        //std::cout<<"in commit,getFromRename:"<<toIEW->commitInfo[tid].getFromRename<<"renamequeue:"<<fromRename->size;
 
         if (!rob->isEmpty(tid) && rob->readHeadInst(tid)->readyToCommit()) {
             // The ROB has more instructions it can commit. Its next status
@@ -1140,8 +1140,8 @@ DefaultCommit<Impl>::commitInsts()
                 DPRINTF(Commit, "Unable to commit head instruction PC:%s "
                         "[tid:%i] [sn:%i].\n",
                         head_inst->pcState(), tid ,head_inst->seqNum);
-                std::cout<<"i am can not commit head:";
-                head_inst->dump();
+                //std::cout<<"i am can not commit head:";
+                //head_inst->dump();
                 break;
             }
         }
@@ -1160,7 +1160,7 @@ bool
 DefaultCommit<Impl>::commitHead(const DynInstPtr &head_inst, unsigned inst_num)
 {
     assert(head_inst);
-    
+    /*
     //std::cout<<"commithead:: SN:"<<head_inst->seqNum<<" val:"<<head_inst->res<<" ";
     std::cout<<"resultvalue:"<<head_inst->res<<" ";
     head_inst->dump();
@@ -1189,7 +1189,7 @@ DefaultCommit<Impl>::commitHead(const DynInstPtr &head_inst, unsigned inst_num)
         }
     }
     std::cout<<std::endl;
-
+    */
 
 
 

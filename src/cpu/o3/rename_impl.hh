@@ -456,7 +456,7 @@ DefaultRename<Impl>::tick()
     list<ThreadID>::iterator end = activeThreads->end();
 
     // Check stall and squash signals.
-    std::cout<<"in rename:"<<std::endl;
+    //std::cout<<"in rename:"<<std::endl;
     while (threads != end) {
         ThreadID tid = *threads++;
 
@@ -496,23 +496,23 @@ DefaultRename<Impl>::tick()
 
     // @todo: make into updateProgress function
     for (ThreadID tid = 0; tid < numThreads; tid++) {
-        std::cout<<"rename tick,"<<"before toIQ:"<<toIQInProgress[tid]<<",toRob:"<<toRobInProgress[tid]<<",storesInProgress:"<<storesInProgress[tid]<<std::endl;
-        std::cout<<"from IEW:"<<"dispatched:"<<fromIEW->iewInfo[tid].dispatched;
-        std::cout<<" from commit:getfromrename:"<<fromCommit->commitInfo[tid].getFromRename<<std::endl;
-        std::cout<<",dispatchedToSQ:"<<fromIEW->iewInfo[tid].dispatchedToSQ;
+        //std::cout<<"rename tick,"<<"before toIQ:"<<toIQInProgress[tid]<<",toRob:"<<toRobInProgress[tid]<<",storesInProgress:"<<storesInProgress[tid]<<std::endl;
+        //std::cout<<"from IEW:"<<"dispatched:"<<fromIEW->iewInfo[tid].dispatched;
+        //std::cout<<" from commit:getfromrename:"<<fromCommit->commitInfo[tid].getFromRename<<std::endl;
+        //std::cout<<",dispatchedToSQ:"<<fromIEW->iewInfo[tid].dispatchedToSQ;
         
         toIQInProgress[tid] -= fromIEW->iewInfo[tid].dispatched;
         toRobInProgress[tid] -= fromCommit->commitInfo[tid].getFromRename;
         loadsInProgress[tid] -= fromIEW->iewInfo[tid].dispatchedToLQ;
         storesInProgress[tid] -= fromIEW->iewInfo[tid].dispatchedToSQ;
         
-        std::cout<<"rename tick,"<<"after: toIQInProgress:"<<toIQInProgress[tid]<<",toRobInProgress"<<toRobInProgress[tid]<<"storesInProgress:"<<storesInProgress[tid]<<std::endl;
+        //std::cout<<"rename tick,"<<"after: toIQInProgress:"<<toIQInProgress[tid]<<",toRobInProgress"<<toRobInProgress[tid]<<"storesInProgress:"<<storesInProgress[tid]<<std::endl;
 
         assert(loadsInProgress[tid] >= 0);
         assert(storesInProgress[tid] >= 0);
         assert(toIQInProgress[tid] >=0);
         assert(toRobInProgress[tid] >=0);
-        std::cout<<endl;
+        //std::cout<<endl;
     }
 
 }
@@ -812,8 +812,8 @@ DefaultRename<Impl>::renameInsts(ThreadID tid)
             ++(toIEWW->size);
             // Increment which instruction we're on.
             ++toIEWWIndex;
-            std::cout<<"to iew,commit size:"<<toCommit->size<<" iew size:"<<toIEWW->size<<"noNeedExe:"<<inst->noNeedExe<<" ";
-            inst->dump();
+            //std::cout<<"to iew,commit size:"<<toCommit->size<<" iew size:"<<toIEWW->size<<"noNeedExe:"<<inst->noNeedExe<<" ";
+            //inst->dump();
         }
         toCommit->insts[toCommitIndex] = inst;
         ++(toCommit->size);
@@ -825,8 +825,8 @@ DefaultRename<Impl>::renameInsts(ThreadID tid)
         --insts_available;
         
         ++to_rob_insts;
-        std::cout<<"to commit,commit size:"<<toCommit->size<<" iew size:"<<toIEWW->size<<"noNeedExe:"<<inst->noNeedExe<<" ";
-        inst->dump();
+        //std::cout<<"to commit,commit size:"<<toCommit->size<<" iew size:"<<toIEWW->size<<"noNeedExe:"<<inst->noNeedExe<<" ";
+        //inst->dump();
        
          
     }
@@ -1809,9 +1809,9 @@ DefaultRename<Impl>::renameWakeUpInsts(ThreadID tid)
         }
         */
         DPRINTF(Rename, "Start to rename inst.\n");
-        std::cout<<"i am in wake up renamer inst";
-        inst->dump();
-        DPRINTF(Rename, "finish inst dump.\n");
+        //std::cout<<"i am in wake up renamer inst";
+        //inst->dump();
+        //DPRINTF(Rename, "finish inst dump.\n");
         renameSrcRegs(inst, inst->threadNumber);
 
         renameDestRegsSec(inst, inst->threadNumber);
@@ -1841,8 +1841,8 @@ DefaultRename<Impl>::renameWakeUpInsts(ThreadID tid)
 
         // Decrement how many instructions are available.
         --insts_avail;
-        std::cout<<inst->noNeedExe<<" ";
-        inst->dump();
+        //std::cout<<inst->noNeedExe<<" ";
+        //inst->dump();
     }
 
     toIQInProgress[tid] += renamed_insts;

@@ -808,13 +808,13 @@ InstructionQueue<Impl>::scheduleReadyInsts()
     //add to debug
     DPRINTF(IQ,"total_issued:%d,totalWidth:%d,listOrder size:%d\n",total_issued,totalWidth,
         listOrder.size());
-    std::cout<<"print list"<<std::endl;
-    dumpLists();
-    std::cout<<std::endl;
+    //std::cout<<"print list"<<std::endl;
+    //dumpLists();
+    //std::cout<<std::endl;
 
-    std::cout<<"print inst"<<std::endl;
-    dumpInsts();
-    std::cout<<std::endl;
+    //std::cout<<"print inst"<<std::endl;
+    //dumpInsts();
+    //std::cout<<std::endl;
  
     
 
