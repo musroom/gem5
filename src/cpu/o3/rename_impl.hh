@@ -554,10 +554,12 @@ DefaultRename<Impl>::rename(bool &status_change, ThreadID tid)
         renameStatus[tid] == Idle) {
         DPRINTF(Rename, "[tid:%u]: Not blocked, so attempting to run "
                 "stage.\n", tid);
+        //renameWakeUpInsts(tid);
 
         renameInsts(tid);
     } else if (renameStatus[tid] == Unblocking) {
         renameInsts(tid);
+        //renameWakeUpInsts(tid);
 
         if (validInsts()) {
             // Add the current inputs to the skid buffer so they can be

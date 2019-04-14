@@ -9,6 +9,7 @@ cscope.out
 .*.swo
 m5out
 run_recode_imp
+output
 /src/doxygen
 /ext/dramsim2/DRAMSim2
 /ext/mcpat/regression/*/*.out

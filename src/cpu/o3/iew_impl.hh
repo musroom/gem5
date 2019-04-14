@@ -112,6 +112,7 @@ DefaultIEW<Impl>::DefaultIEW(O3CPU *_cpu, DerivO3CPUParams *params)
     updateLSQNextCycle = false;
 
     skidBufferMax = (renameToIEWDelay + 1) * params->renameWidth;
+    //skidBufferMax = 100;
 }
 
 template <class Impl>
@@ -678,7 +679,7 @@ DefaultIEW<Impl>::skidInsert(ThreadID tid)
 
         skidBuffer[tid].push(inst);
     }
-
+    //std::cout<<"skidBuffer size:"<<skidBuffer[tid].size()<<" skidBufferMax:"<<skidBufferMax<<std::endl;
     assert(skidBuffer[tid].size() <= skidBufferMax &&
            "Skidbuffer Exceeded Max Size");
 }
@@ -1056,7 +1057,7 @@ DefaultIEW<Impl>::dispatchInsts(ThreadID tid)
             (inst->isStore() && ldstQueue.sqFull(tid))) {
             DPRINTF(IEW, "[tid:%i]: Issue: %s has become full.\n",tid,
                     inst->isLoad() ? "LQ" : "SQ");
-
+            ldstQueue.dumpInsts();
             // Call function to start blocking.
             block(tid);
 
@@ -1591,17 +1592,17 @@ DefaultIEW<Impl>::tick()
             instQueue.commit(fromCommit->commitInfo[tid].doneSeqNum,tid);
         }
         
-        DPRINTF(IEW,"nonSpecSeqNum: [sn:%lli]",fromCommit->commitInfo[tid].nonSpecSeqNum);
+        DPRINTF(IEW,"nonSpecSeqNum: [sn:%lli]i\n",fromCommit->commitInfo[tid].nonSpecSeqNum);
         if (fromCommit->commitInfo[tid].nonSpecSeqNum != 0) {
 
-            DPRINTF(IEW,"NonspecInst from thread %i,nonSpecSeqNum: [sn:%lli]",tid,fromCommit->commitInfo[tid].nonSpecSeqNum);
+            DPRINTF(IEW,"NonspecInst from thread %i,nonSpecSeqNum: [sn:%lli]\n",tid,fromCommit->commitInfo[tid].nonSpecSeqNum);
             if (fromCommit->commitInfo[tid].strictlyOrdered) {
                 instQueue.replayMemInst(
                     fromCommit->commitInfo[tid].strictlyOrderedLoad);
                 fromCommit->commitInfo[tid].strictlyOrderedLoad->setAtCommit();
-                DPRINTF(IEW,"nonSpecSeqNum != 0,replayMemInst");
+                DPRINTF(IEW,"nonSpecSeqNum != 0,replayMemInst\n");
             } else {
-                DPRINTF(IEW,"nonSpecSeqNum != 0,scheduleNonSpec");
+                DPRINTF(IEW,"nonSpecSeqNum != 0,scheduleNonSpec\n");
                 instQueue.scheduleNonSpec(
                     fromCommit->commitInfo[tid].nonSpecSeqNum);
             }

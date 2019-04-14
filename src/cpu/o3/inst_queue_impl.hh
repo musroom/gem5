@@ -1019,7 +1019,7 @@ InstructionQueue<Impl>::wakeDependents(const DynInstPtr &completed_inst)
         intInstQueueWakeupAccesses++;
     }
 
-    DPRINTF(IQ, "Waking dependents of completed instruction.\n");
+    DPRINTF(IQ, "Waking dependents of completed instruction[sn:%lli].\n",completed_inst->seqNum);
 
     assert(!completed_inst->isSquashed());
 
@@ -1079,6 +1079,7 @@ InstructionQueue<Impl>::wakeDependents(const DynInstPtr &completed_inst)
 
         // Reset the head node now that all of its dependents have
         // been woken up.
+        //dependGraph.dump();
         assert(dependGraph.empty(dest_reg->flatIndex()));
         dependGraph.clearInst(dest_reg->flatIndex());
 
@@ -1371,6 +1372,7 @@ InstructionQueue<Impl>::doSquash(ThreadID tid)
             if (dest_reg->isFixedMapping()){
                 continue;
             }
+            dependGraph.dump(dest_reg->flatIndex());
             assert(dependGraph.empty(dest_reg->flatIndex()));
             dependGraph.clearInst(dest_reg->flatIndex());
         }
@@ -1450,7 +1452,6 @@ InstructionQueue<Impl>::addToProducers(const DynInstPtr &new_inst)
         }
 
         if (!dependGraph.empty(dest_reg->flatIndex())) {
-            dependGraph.dump();
             panic("Dependency graph %i (%s) (flat: %i) not empty!",
                   dest_reg->index(), dest_reg->className(),
                   dest_reg->flatIndex());

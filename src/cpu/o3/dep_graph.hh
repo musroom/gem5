@@ -109,11 +109,12 @@ class DependencyGraph
     bool empty() const;
 
     /** Checks if there are any dependents on a specific register. */
-    bool empty(PhysRegIndex idx) const { return !dependGraph[idx].next; }
+    bool empty(PhysRegIndex idx) const {return !dependGraph[idx].next;}
 
     /** Debugging function to dump out the dependency graph.
      */
     void dump();
+    void dump(PhysRegIndex i);
 
   private:
     /** Array of linked lists.  Each linked list is a list of all the
@@ -295,4 +296,31 @@ DependencyGraph<DynInstPtr>::dump()
     cprintf("memAllocCounter: %i\n", memAllocCounter);
 }
 
+template <class DynInstPtr>
+void
+DependencyGraph<DynInstPtr>::dump(PhysRegIndex i)
+{
+    DepEntry *curr;
+    cprintf("in empty dump dependence graph");
+    curr = &dependGraph[i];
+    if (curr->inst) {
+        cprintf("dependGraph[%i]: producer: %s [sn:%lli] consumer: ",
+                i, curr->inst->pcState(), curr->inst->seqNum);
+    } else {
+        cprintf("dependGraph[%i]: No producer. consumer: ", i);
+    }
+
+    while (curr->next != NULL) {
+        curr = curr->next;
+
+        cprintf("%s [sn:%lli] ",
+                curr->inst->pcState(), curr->inst->seqNum);
+    }
+
+    cprintf("\n");
+
+    cprintf("memAllocCounter: %i\n", memAllocCounter);
+
+    
+}
 #endif // __CPU_O3_DEP_GRAPH_HH__
