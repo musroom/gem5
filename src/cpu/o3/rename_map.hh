@@ -124,7 +124,35 @@ class SimpleRenameMap
      * renamed to, and the previous physical register that the same
      * logical register was previously mapped to.
      */
-    typedef std::pair<PhysRegIdPtr, PhysRegIdPtr> RenameInfo;
+    typedef std::pair<PhysRegIdPtr, PhysRegIdPtr> RenameInfoSec;
+    
+    struct RenameInfoExt{
+        RenameInfoExt(PhysRegIdPtr _newPhysReg,
+                      PhysRegIdPtr _prevPhysReg,
+                      TheISA::PCState _prevpc,
+                      bool _prevparkBit)
+            : newPhysReg(_newPhysReg), prevPhysReg(_prevPhysReg),
+              prevpc(_prevpc), prevparkBit(_prevparkBit)
+        {
+        }
+        RenameInfoExt(){
+            newPhysReg = NULL;
+            prevPhysReg = NULL;
+            prevpc = 0;
+            prevparkBit=false;
+        }
+
+        /** The new physical register that the arch. register is renamed to. */
+        PhysRegIdPtr newPhysReg;
+        /** The old physical register that the arch. register was renamed to.
+         */
+        PhysRegIdPtr prevPhysReg;
+        TheISA::PCState prevpc;
+        bool prevparkBit;
+    };
+    //11typedef typename RenameInfoExt RenameInfoExt;
+
+
 
     /**
      * Tell rename map to get a new free physical register to remap
@@ -133,23 +161,25 @@ class SimpleRenameMap
      * @return A RenameInfo pair indicating both the new and previous
      * physical registers.
      */
-    RenameInfo rename(const RegId& arch_reg,TheISA::PCState pc);
-
+    RenameInfoExt rename(const RegId& arch_reg,TheISA::PCState pc);
+    RenameInfoExt renameBeforePark(const RegId& arch_reg,TheISA::PCState pc);
     /**
      * Look up the physical register mapped to an architectural register.
      * @param arch_reg The architectural register to look up.
      * @return The physical register it is currently mapped to.
      */
-    PhysRegIdPtr lookup(const RegId& arch_reg) const
+    PhysRegIdPtr lookupSec(const RegId& arch_reg) const
     {
-        assert(arch_reg.flatIndex() <= extmap.size());
         assert(arch_reg.flatIndex() <= secmap.size());
          
-        if(extmap[arch_reg.flatIndex()].preg == NULL) {
-            return secmap[arch_reg.flatIndex()];
-        } else {
-            return extmap[arch_reg.flatIndex()].preg;
-        }
+        return secmap[arch_reg.flatIndex()];
+    }
+
+    PhysRegIdPtr lookupExt(const RegId& arch_reg) const
+    {
+        assert(arch_reg.flatIndex() <= extmap.size());
+
+        return extmap[arch_reg.flatIndex()].preg;
     }
 
 
@@ -159,17 +189,23 @@ class SimpleRenameMap
      * @param arch_reg The architectural register to remap.
      * @param phys_reg The physical register to remap it to.
      */
-    void setEntry(const RegId& arch_reg, PhysRegIdPtr phys_reg)
+    void setEntrySec(const RegId& arch_reg, PhysRegIdPtr phys_reg)
     {
-        assert(arch_reg.flatIndex() <= extmap.size());
         assert(arch_reg.flatIndex() <= secmap.size());
         
-        extmap[arch_reg.flatIndex()].preg = phys_reg; 
-        extmap[arch_reg.flatIndex()].pc = 0;
-        extmap[arch_reg.flatIndex()].parkBit = false;
-        
-        secmap[arch_reg.flatIndex()] = NULL;
+        secmap[arch_reg.flatIndex()] = phys_reg;
     }
+ 
+    void setEntryExt(const RegId& arch_reg, PhysRegIdPtr phys_reg,TheISA::PCState pc,bool parkBit)
+    {
+        assert(arch_reg.flatIndex() <= extmap.size());
+
+        extmap[arch_reg.flatIndex()].preg = phys_reg;
+        extmap[arch_reg.flatIndex()].pc = pc;
+        extmap[arch_reg.flatIndex()].parkBit = parkBit;
+
+    }
+
 
     /** Return the number of free entries on the associated free list. */
     unsigned numFreeEntries() const { return freeList->numFreeRegs(); }
@@ -210,7 +246,7 @@ class SimpleRenameMap
         return extmap[arch_reg.flatIndex()].pc;
     }
 
-    RenameInfo renameWakeUp(const RegId& arch_reg);
+    RenameInfoSec renameWakeUp(const RegId& arch_reg);
     
     bool lookupParkBit(const RegId& arch_reg) const
     {
@@ -286,7 +322,8 @@ class UnifiedRenameMap
 
   public:
 
-    typedef SimpleRenameMap::RenameInfo RenameInfo;
+    typedef SimpleRenameMap::RenameInfoExt RenameInfoExt;
+    typedef SimpleRenameMap::RenameInfoSec RenameInfoSec;
 
     /** Default constructor.  init() must be called prior to use. */
     UnifiedRenameMap() : regFile(nullptr) {};
@@ -309,7 +346,7 @@ class UnifiedRenameMap
      * @return A RenameInfo pair indicating both the new and previous
      * physical registers.
      */
-    RenameInfo rename(const RegId& arch_reg,TheISA::PCState pc)
+    RenameInfoExt rename(const RegId& arch_reg,TheISA::PCState pc)
     {
         switch (arch_reg.classValue()) {
           case IntRegClass:
@@ -329,10 +366,12 @@ class UnifiedRenameMap
           case MiscRegClass:
             {
             // misc regs aren't really renamed, just remapped
-            PhysRegIdPtr phys_reg = lookup(arch_reg);
+            PhysRegIdPtr phys_reg = lookupExt(arch_reg);
+            TheISA::PCState pc_prev = getSourceInstPC(arch_reg);
+            bool prev_park_bit = lookupParkBit(arch_reg);
             // Set the new register to the previous one to keep the same
             // mapping throughout the execution.
-            return RenameInfo(phys_reg, phys_reg);
+            return RenameInfoExt(phys_reg, phys_reg,pc_prev,prev_park_bit);
             }
 
           default:
@@ -341,6 +380,41 @@ class UnifiedRenameMap
         }
     }
 
+    RenameInfoExt renameBeforePark(const RegId& arch_reg,TheISA::PCState pc)
+    {
+        switch (arch_reg.classValue()) {
+          case IntRegClass:
+            return intMap.renameBeforePark(arch_reg,pc);
+          case FloatRegClass:
+            return floatMap.renameBeforePark(arch_reg,pc);
+          case VecRegClass:
+            assert(vecMode == Enums::Full);
+            return vecMap.renameBeforePark(arch_reg,pc);
+          case VecElemClass:
+            assert(vecMode == Enums::Elem);
+            return vecElemMap.renameBeforePark(arch_reg,pc);
+          case VecPredRegClass:
+            return predMap.renameBeforePark(arch_reg,pc);
+          case CCRegClass:
+            return ccMap.renameBeforePark(arch_reg,pc);
+          case MiscRegClass:
+            {
+            // misc regs aren't really renamed, just remapped
+            PhysRegIdPtr phys_reg = lookupExt(arch_reg);
+            TheISA::PCState pc_prev = getSourceInstPC(arch_reg);
+            bool prev_park_bit = lookupParkBit(arch_reg);
+            // Set the new register to the previous one to keep the same
+            // mapping throughout the execution.
+            return RenameInfoExt(phys_reg, phys_reg,pc_prev,prev_park_bit);
+            }
+
+          default:
+            panic("rename renameBefore(): unknown reg class %s\n",
+                  arch_reg.className());
+        }
+    }
+
+
     /**
      * Look up the physical register mapped to an architectural register.
      * This version takes a flattened architectural register id
@@ -348,28 +422,28 @@ class UnifiedRenameMap
      * @param arch_reg The architectural register to look up.
      * @return The physical register it is currently mapped to.
      */
-    PhysRegIdPtr lookup(const RegId& arch_reg) const
+    PhysRegIdPtr lookupExt(const RegId& arch_reg) const
     {
         switch (arch_reg.classValue()) {
           case IntRegClass:
-            return intMap.lookup(arch_reg);
+            return intMap.lookupExt(arch_reg);
 
           case FloatRegClass:
-            return  floatMap.lookup(arch_reg);
+            return  floatMap.lookupExt(arch_reg);
 
           case VecRegClass:
             assert(vecMode == Enums::Full);
-            return  vecMap.lookup(arch_reg);
+            return  vecMap.lookupExt(arch_reg);
 
           case VecElemClass:
             assert(vecMode == Enums::Elem);
-            return  vecElemMap.lookup(arch_reg);
+            return  vecElemMap.lookupExt(arch_reg);
 
           case VecPredRegClass:
-            return predMap.lookup(arch_reg);
+            return predMap.lookupExt(arch_reg);
 
           case CCRegClass:
-            return ccMap.lookup(arch_reg);
+            return ccMap.lookupExt(arch_reg);
 
           case MiscRegClass:
             // misc regs aren't really renamed, they keep the same
@@ -382,6 +456,42 @@ class UnifiedRenameMap
         }
     }
 
+
+    PhysRegIdPtr lookupSec(const RegId& arch_reg) const
+    {
+        switch (arch_reg.classValue()) {
+          case IntRegClass:
+            return intMap.lookupSec(arch_reg);
+
+          case FloatRegClass:
+            return  floatMap.lookupSec(arch_reg);
+
+          case VecRegClass:
+            assert(vecMode == Enums::Full);
+            return  vecMap.lookupSec(arch_reg);
+
+          case VecElemClass:
+            assert(vecMode == Enums::Elem);
+            return  vecElemMap.lookupSec(arch_reg);
+
+          case VecPredRegClass:
+            return predMap.lookupSec(arch_reg);
+
+          case CCRegClass:
+            return ccMap.lookupSec(arch_reg);
+
+          case MiscRegClass:
+            // misc regs aren't really renamed, they keep the same
+            // mapping throughout the execution.
+            return regFile->getMiscRegId(arch_reg.flatIndex());
+
+          default:
+            panic("rename lookup(): unknown reg class %s\n",
+                  arch_reg.className());
+        }
+    }
+
+
     /**
      * Update rename map with a specific mapping.  Generally used to
      * roll back to old mappings on a squash.  This version takes a
@@ -390,41 +500,85 @@ class UnifiedRenameMap
      * @param arch_reg The architectural register to remap.
      * @param phys_reg The physical register to remap it to.
      */
-    void setEntry(const RegId& arch_reg, PhysRegIdPtr phys_reg)
+    void setEntrySec(const RegId& arch_reg, PhysRegIdPtr phys_reg)
     {
         switch (arch_reg.classValue()) {
           case IntRegClass:
             assert(phys_reg->isIntPhysReg());
-            return intMap.setEntry(arch_reg, phys_reg);
+            return intMap.setEntrySec(arch_reg, phys_reg);
 
           case FloatRegClass:
             assert(phys_reg->isFloatPhysReg());
-            return floatMap.setEntry(arch_reg, phys_reg);
+            return floatMap.setEntrySec(arch_reg, phys_reg);
 
           case VecRegClass:
             assert(phys_reg->isVectorPhysReg());
             assert(vecMode == Enums::Full);
-            return vecMap.setEntry(arch_reg, phys_reg);
+            return vecMap.setEntrySec(arch_reg, phys_reg);
 
           case VecElemClass:
             assert(phys_reg->isVectorPhysElem());
             assert(vecMode == Enums::Elem);
-            return vecElemMap.setEntry(arch_reg, phys_reg);
+            return vecElemMap.setEntrySec(arch_reg, phys_reg);
 
           case VecPredRegClass:
             assert(phys_reg->isVecPredPhysReg());
-            return predMap.setEntry(arch_reg, phys_reg);
+            return predMap.setEntrySec(arch_reg, phys_reg);
 
           case CCRegClass:
             assert(phys_reg->isCCPhysReg());
-            return ccMap.setEntry(arch_reg, phys_reg);
+            return ccMap.setEntrySec(arch_reg, phys_reg);
 
           case MiscRegClass:
             // Misc registers do not actually rename, so don't change
             // their mappings.  We end up here when a commit or squash
             // tries to update or undo a hardwired misc reg nmapping,
             // which should always be setting it to what it already is.
-            assert(phys_reg == lookup(arch_reg));
+            assert(phys_reg == lookupSec(arch_reg));
+            return;
+
+          default:
+            panic("rename setEntry(): unknown reg class %s\n",
+                  arch_reg.className());
+        }
+    }
+
+
+    void setEntryExt(const RegId& arch_reg, PhysRegIdPtr phys_reg,TheISA::PCState pc,bool parkBit)
+    {
+        switch (arch_reg.classValue()) {
+          case IntRegClass:
+            assert(phys_reg->isIntPhysReg());
+            return intMap.setEntryExt(arch_reg, phys_reg,pc,parkBit);
+
+          case FloatRegClass:
+            assert(phys_reg->isFloatPhysReg());
+            return floatMap.setEntryExt(arch_reg, phys_reg,pc,parkBit);
+
+          case VecRegClass:
+            assert(phys_reg->isVectorPhysReg());
+            assert(vecMode == Enums::Full);
+            return vecMap.setEntryExt(arch_reg, phys_reg,pc,parkBit);
+
+          case VecElemClass:
+            assert(phys_reg->isVectorPhysElem());
+            assert(vecMode == Enums::Elem);
+            return vecElemMap.setEntryExt(arch_reg, phys_reg,pc,parkBit);
+
+          case VecPredRegClass:
+            assert(phys_reg->isVecPredPhysReg());
+            return predMap.setEntryExt(arch_reg, phys_reg,pc,parkBit);
+
+          case CCRegClass:
+            assert(phys_reg->isCCPhysReg());
+            return ccMap.setEntryExt(arch_reg, phys_reg,pc,parkBit);
+
+          case MiscRegClass:
+            // Misc registers do not actually rename, so don't change
+            // their mappings.  We end up here when a commit or squash
+            // tries to update or undo a hardwired misc reg nmapping,
+            // which should always be setting it to what it already is.
+            assert(phys_reg == lookupExt(arch_reg));
             return;
 
           default:
@@ -522,7 +676,7 @@ class UnifiedRenameMap
         }
     }
     
-    RenameInfo renameWakeUp(const RegId& arch_reg)
+    RenameInfoSec renameWakeUp(const RegId& arch_reg)
     {
         switch (arch_reg.classValue()) {
           case IntRegClass:
@@ -542,10 +696,10 @@ class UnifiedRenameMap
           case MiscRegClass:
             {
                // misc regs aren't really renamed, just remapped
-                PhysRegIdPtr phys_reg = lookup(arch_reg);
+                PhysRegIdPtr phys_reg = lookupSec(arch_reg);
                 // Set the new register to the previous one to keep the same
                 // mapping throughout the execution.
-                return RenameInfo(phys_reg, phys_reg);
+                return RenameInfoSec(phys_reg, phys_reg);
             }
 
           default:

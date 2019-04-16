@@ -1343,7 +1343,8 @@ DefaultCommit<Impl>::commitHead(const DynInstPtr &head_inst, unsigned inst_num)
 
     // Update the commit rename map
     for (int i = 0; i < head_inst->numDestRegs(); i++) {
-        renameMap[tid]->setEntry(head_inst->flattenedDestRegIdx(i),
+        DPRINTF(Commit,"update the commit rename map,[sn:%lli]\n",head_inst->seqNum);
+        renameMap[tid]->setEntrySec(head_inst->flattenedDestRegIdx(i),
                                  head_inst->renamedDestRegIdx(i));
     }
 
@@ -1655,7 +1656,7 @@ DefaultCommit<Impl>::wakeUpInsts()
     int wakeup_num = 0;
     bool back = false;
     if(rob->isEmpty()) {
-        DPRINTF(Commit,"rob is empty no need to wake up");
+        DPRINTF(Commit,"rob is empty no need to wake up.\n");
         DPRINTF(Commit,"wake up insts this cycle:\n",wakeup_num);
         return;
     }

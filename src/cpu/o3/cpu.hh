@@ -508,7 +508,7 @@ class FullO3CPU : public BaseO3CPU
     VecLaneT<VecElem, true>
     readArchVecLane(int reg_idx, int lId, ThreadID tid) const
     {
-        PhysRegIdPtr phys_reg = commitRenameMap[tid].lookup(
+        PhysRegIdPtr phys_reg = commitRenameMap[tid].lookupSec(
                     RegId(VecRegClass, reg_idx));
         return readVecLane<VecElem>(phys_reg);
     }
@@ -519,7 +519,7 @@ class FullO3CPU : public BaseO3CPU
     void
     setArchVecLane(int reg_idx, int lId, ThreadID tid, const LD& val)
     {
-        PhysRegIdPtr phys_reg = commitRenameMap[tid].lookup(
+        PhysRegIdPtr phys_reg = commitRenameMap[tid].lookupSec(
                     RegId(VecRegClass, reg_idx));
         setVecLane(phys_reg, val);
     }

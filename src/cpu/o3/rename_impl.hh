@@ -355,7 +355,8 @@ DefaultRename<Impl>::isDrained() const
 {
     for (ThreadID tid = 0; tid < numThreads; tid++) {
         if (toIQInProgress[tid] != 0 ||
-            !historyBuffer[tid].empty() ||
+            !historyBufferExt[tid].empty() ||
+            !historyBufferSec[tid].empty() ||
             !skidBuffer[tid].empty() ||
             !insts[tid].empty() ||
             (renameStatus[tid] != Idle && renameStatus[tid] != Running))
@@ -376,7 +377,8 @@ void
 DefaultRename<Impl>::drainSanityCheck() const
 {
     for (ThreadID tid = 0; tid < numThreads; tid++) {
-        assert(historyBuffer[tid].empty());
+        assert(historyBufferSec[tid].empty());
+        assert(historyBufferExt[tid].empty());
         assert(insts[tid].empty());
         assert(skidBuffer[tid].empty());
         assert(toIQInProgress[tid] == 0);
@@ -489,7 +491,9 @@ DefaultRename<Impl>::tick()
             !fromCommit->commitInfo[tid].squash &&
             renameStatus[tid] != Squashing) {
 
-            removeFromHistory(fromCommit->commitInfo[tid].doneSeqNum,
+            removeFromHistoryExt(fromCommit->commitInfo[tid].doneSeqNum,
+                                  tid);
+            removeFromHistorySec(fromCommit->commitInfo[tid].doneSeqNum,
                                   tid);
         }
     }
@@ -782,8 +786,9 @@ DefaultRename<Impl>::renameInsts(ThreadID tid)
             } else {
                 DPRINTF(Rename,"park into LTP because of source have parkBit [sn:%i]\n",inst->seqNum);
             }
-            bool resu = fillInRAT(inst);
-            DPRINTF(Rename,"fill in RAT success:%d\n",resu);            
+            renameSrcBeforePark(inst);
+            bool resu = renameDestBeforePark(inst);
+            DPRINTF(Rename,"ResetDestBeforePark success:%d\n",resu);            
              //insert into LTP
             resu = insertLTP(inst,tid);
             DPRINTF(Rename,"insert in LTP success:%d\n",resu);            
@@ -1020,20 +1025,20 @@ template <class Impl>
 void
 DefaultRename<Impl>::doSquash(const InstSeqNum &squashed_seq_num, ThreadID tid)
 {
-    typename std::list<RenameHistory>::iterator hb_it =
-        historyBuffer[tid].begin();
-    DPRINTF(Rename, "[tid:%u]: history buffer's begin "
-        "seq number %i.\n", tid, hb_it->instSeqNum);
+    typename std::list<RenameHistoryExt>::iterator hb_it_ext =
+        historyBufferExt[tid].begin();
+    DPRINTF(Rename, "[tid:%u]: history bufferExt's begin "
+        "seq number %i.\n", tid, hb_it_ext->instSeqNum);
     // After a syscall squashes everything, the history buffer may be empty
     // but the ROB may still be squashing instructions.
     // Go through the most recent instructions, undoing the mappings
     // they did and freeing up the registers.
-    while (!historyBuffer[tid].empty() &&
-           hb_it->instSeqNum > squashed_seq_num) {
-        assert(hb_it != historyBuffer[tid].end());
+    while (!historyBufferExt[tid].empty() &&
+           hb_it_ext->instSeqNum > squashed_seq_num) {
+        assert(hb_it_ext != historyBufferExt[tid].end());
 
         DPRINTF(Rename, "[tid:%u]: Removing history entry with sequence "
-                "number %i.\n", tid, hb_it->instSeqNum);
+                "number %i.\n", tid, hb_it_ext->instSeqNum);
 
         // Undo the rename mapping only if it was really a change.
         // Special regs that are not really renamed (like misc regs
@@ -1041,25 +1046,70 @@ DefaultRename<Impl>::doSquash(const InstSeqNum &squashed_seq_num, ThreadID tid)
         // is the same as the old one.  While it would be merely a
         // waste of time to update the rename table, we definitely
         // don't want to put these on the free list.
-        if (hb_it->newPhysReg != hb_it->prevPhysReg) {
+        if (hb_it_ext->newPhysReg != hb_it_ext->prevPhysReg) {
             // Tell the rename map to set the architected register to the
             // previous physical register that it was renamed to.
-            renameMap[tid]->setEntry(hb_it->archReg, hb_it->prevPhysReg);
+            renameMap[tid]->setEntryExt(hb_it_ext->archReg, hb_it_ext->prevPhysReg,hb_it_ext->pc,hb_it_ext->parkBit);
 
             // Put the renamed physical register back on the free list.
-            freeList->addReg(hb_it->newPhysReg);
+            if(hb_it_ext->newPhysReg !=NULL) 
+            {
+                freeList->addReg(hb_it_ext->newPhysReg);
+            }
         }
 
         // Notify potential listeners that the register mapping needs to be
         // removed because the instruction it was mapped to got squashed. Note
         // that this is done before hb_it is incremented.
-        ppSquashInRename->notify(std::make_pair(hb_it->instSeqNum,
-                                                hb_it->newPhysReg));
+        ppSquashInRename->notify(std::make_pair(hb_it_ext->instSeqNum,
+                                                hb_it_ext->newPhysReg));
 
-        historyBuffer[tid].erase(hb_it++);
+        historyBufferExt[tid].erase(hb_it_ext++);
 
         ++renameUndoneMaps;
     }
+
+    typename std::list<RenameHistorySec>::iterator hb_it_sec =
+        historyBufferSec[tid].begin();
+    DPRINTF(Rename, "[tid:%u]: history buffer's begin "
+        "seq number %i.\n", tid, hb_it_sec->instSeqNum);
+    // After a syscall squashes everything, the history buffer may be empty
+    // but the ROB may still be squashing instructions.
+    // Go through the most recent instructions, undoing the mappings
+    // they did and freeing up the registers.
+    while (!historyBufferSec[tid].empty() &&
+           hb_it_sec->instSeqNum > squashed_seq_num) {
+        assert(hb_it_sec != historyBufferSec[tid].end());
+
+        DPRINTF(Rename, "[tid:%u]: Removing history entry with sequence "
+                "number %i.\n", tid, hb_it_sec->instSeqNum);
+
+        // Undo the rename mapping only if it was really a change.
+        // Special regs that are not really renamed (like misc regs
+        // and the zero reg) can be recognized because the new mapping
+        // is the same as the old one.  While it would be merely a
+        // waste of time to update the rename table, we definitely
+        // don't want to put these on the free list.
+        if (hb_it_sec->newPhysReg != hb_it_sec->prevPhysReg) {
+            // Tell the rename map to set the architected register to the
+            // previous physical register that it was renamed to.
+            renameMap[tid]->setEntrySec(hb_it_sec->archReg, hb_it_sec->prevPhysReg);
+
+            // Put the renamed physical register back on the free list.
+            freeList->addReg(hb_it_sec->newPhysReg);
+        }
+
+        // Notify potential listeners that the register mapping needs to be
+        // removed because the instruction it was mapped to got squashed. Note
+        // that this is done before hb_it is incremented.
+        ppSquashInRename->notify(std::make_pair(hb_it_sec->instSeqNum,
+                                                hb_it_sec->newPhysReg));
+
+        historyBufferSec[tid].erase(hb_it_sec++);
+
+        ++renameUndoneMaps;
+    }
+
     //squash LTP
     while(secRenameQueue[tid].empty()!= true) {
         if(secRenameQueue[tid].front()->seqNum >= squashed_seq_num) {
@@ -1089,19 +1139,19 @@ DefaultRename<Impl>::doSquash(const InstSeqNum &squashed_seq_num, ThreadID tid)
 
 template<class Impl>
 void
-DefaultRename<Impl>::removeFromHistory(InstSeqNum inst_seq_num, ThreadID tid)
+DefaultRename<Impl>::removeFromHistoryExt(InstSeqNum inst_seq_num, ThreadID tid)
 {
     DPRINTF(Rename, "[tid:%u]: Removing a committed instruction from the "
-            "history buffer %u (size=%i), until [sn:%lli].\n",
-            tid, tid, historyBuffer[tid].size(), inst_seq_num);
+            "Ext history buffer %u (Extsize=%i), until [sn:%lli].\n",
+            tid, tid, historyBufferExt[tid].size(),inst_seq_num);
 
-    typename std::list<RenameHistory>::iterator hb_it =
-        historyBuffer[tid].end();
+    typename std::list<RenameHistoryExt>::iterator hb_it =
+        historyBufferExt[tid].end();
 
     --hb_it;
 
-    if (historyBuffer[tid].empty()) {
-        DPRINTF(Rename, "[tid:%u]: History buffer is empty.\n", tid);
+    if (historyBufferExt[tid].empty()) {
+        DPRINTF(Rename, "[tid:%u]: History buffer Ext is empty.\n", tid);
         return;
     } else if (hb_it->instSeqNum > inst_seq_num) {
         DPRINTF(Rename, "[tid:%u]: Old sequence number encountered.  Ensure "
@@ -1113,8 +1163,66 @@ DefaultRename<Impl>::removeFromHistory(InstSeqNum inst_seq_num, ThreadID tid)
     // number. Some or even all of the committed instructions may not have
     // rename histories if they did not have destination registers that were
     // renamed.
-    while (!historyBuffer[tid].empty() &&
-           hb_it != historyBuffer[tid].end() &&
+    while (!historyBufferExt[tid].empty() &&
+           hb_it != historyBufferExt[tid].end() &&
+           hb_it->instSeqNum <= inst_seq_num) {
+
+
+        // Don't free special phys regs like misc and zero regs, which
+        // can be recognized because the new mapping is the same as
+        // the old one.
+        if (hb_it->newPhysReg != hb_it->prevPhysReg) {
+            if(hb_it->prevPhysReg == NULL) {
+                DPRINTF(Rename, "[tid:%u]: Freeing up older rename NULL,[sn:%lli].\n",
+                tid, 
+                hb_it->instSeqNum);
+            }else{
+                DPRINTF(Rename, "[tid:%u]: Freeing up older rename of reg %i (%s), "
+                "[sn:%lli].\n",
+                tid, hb_it->prevPhysReg->index(),
+                hb_it->prevPhysReg->className(),
+                hb_it->instSeqNum);
+
+                freeList->addReg(hb_it->prevPhysReg);
+            }
+        }
+
+        ++renameCommittedMaps;
+
+        historyBufferExt[tid].erase(hb_it--);
+    }
+ 
+}
+
+template<class Impl>
+void
+DefaultRename<Impl>::removeFromHistorySec(InstSeqNum inst_seq_num, ThreadID tid)
+{
+    DPRINTF(Rename, "[tid:%u]: Removing a committed instruction from the "
+            "Sec history buffer %u (size=%i), until [sn:%lli].\n",
+            tid, tid, historyBufferSec[tid].size(), inst_seq_num);
+
+    //remove second rat
+    typename std::list<RenameHistorySec>::iterator hb_it =
+        historyBufferSec[tid].end();
+
+    --hb_it;
+
+    if (historyBufferSec[tid].empty()) {
+        DPRINTF(Rename, "[tid:%u]: History buffer Sec is empty.\n", tid);
+        return;
+    } else if (hb_it->instSeqNum > inst_seq_num) {
+        DPRINTF(Rename, "[tid:%u]: Old sequence number encountered.  Ensure "
+                "that a syscall happened recently.\n", tid);
+        return;
+    }
+
+    // Commit all the renames up until (and including) the committed sequence
+    // number. Some or even all of the committed instructions may not have
+    // rename histories if they did not have destination registers that were
+    // renamed.
+    while (!historyBufferSec[tid].empty() &&
+           hb_it != historyBufferSec[tid].end() &&
            hb_it->instSeqNum <= inst_seq_num) {
 
         DPRINTF(Rename, "[tid:%u]: Freeing up older rename of reg %i (%s), "
@@ -1132,7 +1240,7 @@ DefaultRename<Impl>::removeFromHistory(InstSeqNum inst_seq_num, ThreadID tid)
 
         ++renameCommittedMaps;
 
-        historyBuffer[tid].erase(hb_it--);
+        historyBufferSec[tid].erase(hb_it--);
     }
 }
 
@@ -1149,8 +1257,13 @@ DefaultRename<Impl>::renameSrcRegs(const DynInstPtr &inst, ThreadID tid)
     for (int src_idx = 0; src_idx < num_src_regs; src_idx++) {
         const RegId& src_reg = inst->srcRegIdx(src_idx);
         PhysRegIdPtr renamed_reg;
+        
+        if(true == map->lookupParkBit(tc->flattenRegId(src_reg))) {
+            renamed_reg = map->lookupSec(tc->flattenRegId(src_reg));
+        }else{
+            renamed_reg = map->lookupExt(tc->flattenRegId(src_reg));
+        }
 
-        renamed_reg = map->lookup(tc->flattenRegId(src_reg));
         switch (src_reg.classValue()) {
           case IntRegClass:
             intRenameLookups++;
@@ -1227,7 +1340,7 @@ DefaultRename<Impl>::renameDestRegs(const DynInstPtr &inst, ThreadID tid)
     // Rename the destination registers.
     for (int dest_idx = 0; dest_idx < num_dest_regs; dest_idx++) {
         const RegId& dest_reg = inst->destRegIdx(dest_idx);
-        typename RenameMap::RenameInfo rename_result;
+        typename RenameMap::RenameInfoExt rename_result;
 
         RegId flat_dest_regid = tc->flattenRegId(dest_reg);
 
@@ -1236,25 +1349,27 @@ DefaultRename<Impl>::renameDestRegs(const DynInstPtr &inst, ThreadID tid)
         inst->flattenDestReg(dest_idx, flat_dest_regid);
 
         // Mark Scoreboard entry as not ready
-        scoreboard->unsetReg(rename_result.first);
+        scoreboard->unsetReg(rename_result.newPhysReg);
 
         DPRINTF(Rename, "[tid:%u]: Renaming arch reg %i (%s) to physical "
                 "reg %i (%i).\n", tid, dest_reg.index(),
                 dest_reg.className(),
-                rename_result.first->index(),
-                rename_result.first->flatIndex());
+                rename_result.newPhysReg->index(),
+                rename_result.newPhysReg->flatIndex());
 
         // Record the rename information so that a history can be kept.
-        RenameHistory hb_entry(inst->seqNum, flat_dest_regid,
-                               rename_result.first,
-                               rename_result.second);
+        RenameHistoryExt hb_entry(inst->seqNum, flat_dest_regid,
+                               rename_result.newPhysReg,
+                               rename_result.prevPhysReg,
+                               rename_result.prevpc,
+                               rename_result.prevparkBit);
 
-        historyBuffer[tid].push_front(hb_entry);
+        historyBufferExt[tid].push_front(hb_entry);
 
         DPRINTF(Rename, "[tid:%u]: Adding instruction to history buffer "
                 "(size=%i), [sn:%lli].\n",tid,
-                historyBuffer[tid].size(),
-                (*historyBuffer[tid].begin()).instSeqNum);
+                historyBufferExt[tid].size(),
+                (*historyBufferExt[tid].begin()).instSeqNum);
 
         // Tell the instruction to rename the appropriate destination
         // register (dest_idx) to the new physical register
@@ -1262,8 +1377,8 @@ DefaultRename<Impl>::renameDestRegs(const DynInstPtr &inst, ThreadID tid)
         // register that the same logical register was renamed to
         // (rename_result.second).
         inst->renameDestReg(dest_idx,
-                            rename_result.first,
-                            rename_result.second);
+                            rename_result.newPhysReg,
+                            rename_result.prevPhysReg);
 
         ++renameRenamedOperands;
     }
@@ -1555,13 +1670,36 @@ template <class Impl>
 void
 DefaultRename<Impl>::dumpHistory()
 {
-    typename std::list<RenameHistory>::iterator buf_it;
+    typename std::list<RenameHistorySec>::iterator buf_itt;
 
     for (ThreadID tid = 0; tid < numThreads; tid++) {
 
-        buf_it = historyBuffer[tid].begin();
+        buf_itt = historyBufferSec[tid].begin();
 
-        while (buf_it != historyBuffer[tid].end()) {
+        while (buf_itt != historyBufferSec[tid].end()) {
+            cprintf("Seq num: %i\nArch reg[%s]: %i New phys reg:"
+                    " %i[%s] Old phys reg: %i[%s]\n",
+                    (*buf_itt).instSeqNum,
+                    (*buf_itt).archReg.className(),
+                    (*buf_itt).archReg.index(),
+                    (*buf_itt).newPhysReg->index(),
+                    (*buf_itt).newPhysReg->className(),
+                    (*buf_itt).prevPhysReg->index(),
+                    (*buf_itt).prevPhysReg->className());
+
+            buf_itt++;
+        }
+    }
+    cprintf("\n");
+
+
+    typename std::list<RenameHistoryExt>::iterator buf_it;
+
+    for (ThreadID tid = 0; tid < numThreads; tid++) {
+
+        buf_it = historyBufferExt[tid].begin();
+
+        while (buf_it != historyBufferExt[tid].end()) {
             cprintf("Seq num: %i\nArch reg[%s]: %i New phys reg:"
                     " %i[%s] Old phys reg: %i[%s]\n",
                     (*buf_it).instSeqNum,
@@ -1576,6 +1714,7 @@ DefaultRename<Impl>::dumpHistory()
         }
     }
     cprintf("\n");
+
 }
 
 
@@ -1595,7 +1734,14 @@ void
 DefaultRename<Impl>::closeLTP(ThreadID tid)
 {
     if(gateLTP[tid] == false) return;
-    else gateLTP[tid] = false;
+    else{
+        gateLTP[tid] = false;
+        while(LTP[tid].empty()!= true){
+            wakeUpInst(LTP[tid].front());
+        }
+        DPRINTF(Rename,"[tid:%u]:close LTP wake up insts in LTP",tid);
+        
+    }
     DPRINTF(Rename,"[tid:%u]:close LTP",tid);
 }
 
@@ -1814,7 +1960,7 @@ DefaultRename<Impl>::renameWakeUpInsts(ThreadID tid)
         //std::cout<<"i am in wake up renamer inst";
         //inst->dump();
         //DPRINTF(Rename, "finish inst dump.\n");
-        renameSrcRegs(inst, inst->threadNumber);
+        renameSrcRegsSec(inst, inst->threadNumber);
 
         renameDestRegsSec(inst, inst->threadNumber);
 
@@ -1868,13 +2014,12 @@ DefaultRename<Impl>::renameDestRegsSec(const DynInstPtr &inst, ThreadID tid)
     // Rename the destination registers.
     for (int dest_idx = 0; dest_idx < num_dest_regs; dest_idx++) {
         const RegId& dest_reg = inst->destRegIdx(dest_idx);
-        typename RenameMap::RenameInfo rename_result;
-
+        typename RenameMap::RenameInfoSec rename_result;
         RegId flat_dest_regid = tc->flattenRegId(dest_reg);
 
         rename_result = map->renameWakeUp(flat_dest_regid);
 
-        inst->flattenDestReg(dest_idx, flat_dest_regid);
+        //inst->flattenDestReg(dest_idx, flat_dest_regid);
 
         // Mark Scoreboard entry as not ready
         scoreboard->unsetReg(rename_result.first);
@@ -1886,10 +2031,10 @@ DefaultRename<Impl>::renameDestRegsSec(const DynInstPtr &inst, ThreadID tid)
                 rename_result.first->flatIndex());
 
         // Record the rename information so that a history can be kept.
-        RenameHistory hb_entry(inst->seqNum, flat_dest_regid,
+        RenameHistorySec hb_entry(inst->seqNum, flat_dest_regid,
                                rename_result.first,
                                rename_result.second);
-        
+        /*
         if(historyBuffer[tid].empty() == true || historyBuffer[tid].front().instSeqNum < inst->seqNum) {
             historyBuffer[tid].push_front(hb_entry);
         } else if(historyBuffer[tid].back().instSeqNum > inst->seqNum){
@@ -1901,14 +2046,14 @@ DefaultRename<Impl>::renameDestRegsSec(const DynInstPtr &inst, ThreadID tid)
             }
             historyBuffer[tid].insert(iter,hb_entry);
         }
-          
+        */
      
-        //historyBuffer[tid].push_front(hb_entry);
+        historyBufferSec[tid].push_front(hb_entry);
 
-        DPRINTF(Rename, "[tid:%u]: Adding instruction to history buffer "
+        DPRINTF(Rename, "[tid:%u]: Adding instruction to history buffer Sec"
                 "(size=%i), [sn:%lli].\n",tid,
-                historyBuffer[tid].size(),
-                (*historyBuffer[tid].begin()).instSeqNum);
+                historyBufferSec[tid].size(),
+                (*historyBufferSec[tid].begin()).instSeqNum);
 
         // Tell the instruction to rename the appropriate destination
         // register (dest_idx) to the new physical register
@@ -1948,23 +2093,51 @@ DefaultRename<Impl>::findSrcParkBit(DynInstPtr &inst)
 
 template <class Impl>
 bool
-DefaultRename<Impl>::fillInRAT(DynInstPtr &inst)
+DefaultRename<Impl>::renameDestBeforePark(DynInstPtr &inst)
 {
     ThreadContext *tc = inst->tcBase();
-    ThreadID tid = inst->threadNumber;
-    RenameMap *map = renameMap[tid];
+    RenameMap *map = renameMap[inst->threadNumber];
     unsigned num_dest_regs = inst->numDestRegs();
-    bool result_set = true;
-    // Set pc ans Park BIT
+    ThreadID tid = inst->threadNumber; 
+    // Rename the destination registers.
     for (int dest_idx = 0; dest_idx < num_dest_regs; dest_idx++) {
         const RegId& dest_reg = inst->destRegIdx(dest_idx);
+        typename RenameMap::RenameInfoExt rename_result;
 
         RegId flat_dest_regid = tc->flattenRegId(dest_reg);
 
-        result_set = map->setPC(flat_dest_regid,inst->pcState());
-        result_set = result_set && map->setParkBit(flat_dest_regid);
-    }
-    return result_set;
+        rename_result = map->renameBeforePark(flat_dest_regid,inst->pcState());
+        
+        inst->flattenDestReg(dest_idx, flat_dest_regid); 
+        DPRINTF(Rename, "[tid:%u]: Rename before parking.Renaming arch reg %i (%s).\n", 
+            inst->threadNumber, dest_reg.index(),dest_reg.className());
+
+        // Record the rename information so that a history can be kept.
+        RenameHistoryExt hb_entry(inst->seqNum, flat_dest_regid,
+                               rename_result.newPhysReg,
+                               rename_result.prevPhysReg,
+                               rename_result.prevpc,
+                               rename_result.prevparkBit);
+
+        historyBufferExt[tid].push_front(hb_entry);
+
+        DPRINTF(Rename, "[tid:%u]: Adding instruction to history buffer ext"
+                "(size=%i), [sn:%lli].\n",inst->threadNumber,
+                historyBufferExt[inst->threadNumber].size(),
+                (*historyBufferExt[tid].begin()).instSeqNum);
+
+        // Tell the instruction to rename the appropriate destination
+        // register (dest_idx) to the new physical register
+        // (rename_result.first), and record the previous physical
+        // register that the same logical register was renamed to
+        // (rename_result.second).
+        inst->renameDestReg(dest_idx,
+                            rename_result.newPhysReg,
+                            rename_result.prevPhysReg);
+
+        ++renameRenamedOperands;
+    }   
+    return true;
 }
 
 template <class Impl>
@@ -1987,7 +2160,163 @@ DefaultRename<Impl>::setParkInRAT(DynInstPtr &inst)
     return result_set;
 }
 
+template <class Impl>
+bool
+DefaultRename<Impl>::renameSrcBeforePark(DynInstPtr &inst) 
+{
+    ThreadContext *tc = inst->tcBase();
+    RenameMap *map = renameMap[inst->threadNumber];
+    unsigned num_src_regs = inst->numSrcRegs();
 
+    // Get the architectual register numbers from the source and
+    // operands, and redirect them to the right physical register.
+    for (int src_idx = 0; src_idx < num_src_regs; src_idx++) {
+        const RegId& src_reg = inst->srcRegIdx(src_idx);
+        PhysRegIdPtr renamed_reg;
+        if(true == map->lookupParkBit(tc->flattenRegId(src_reg))) {
+            inst->renameSrcReg(src_idx, NULL);
+            continue;
+        }
+        renamed_reg = map->lookupExt(tc->flattenRegId(src_reg));
+        switch (src_reg.classValue()) {
+          case IntRegClass:
+            intRenameLookups++;
+            break;
+          case FloatRegClass:
+            fpRenameLookups++;
+            break;
+          case VecRegClass:
+          case VecElemClass:
+            vecRenameLookups++;
+            break;
+          case VecPredRegClass:
+            vecPredRenameLookups++;
+            break;
+          case CCRegClass:
+          case MiscRegClass:
+            break;
 
+          default:
+            panic("Invalid register class: %d.", src_reg.classValue());
+        }
 
+        DPRINTF(Rename, "[tid:%u]: Looking up src index:%d,%s arch reg %i"
+                ", got phys reg %i (%s)\n", inst->threadNumber,src_idx,
+                src_reg.className(), src_reg.index(),
+                renamed_reg->index(),
+                renamed_reg->className());
+
+        inst->renameSrcReg(src_idx, renamed_reg);
+        
+        //if the current inst is urgent then it source inst is urgent and need add to UIT
+        if(inst->urgent == true){
+            TheISA::PCState temp = map->getSourceInstPC(tc->flattenRegId(src_reg));
+            if(temp != 0) {
+                decode_ptr->urgInsert(inst, inst->threadNumber);
+                DPRINTF(Rename, "insert Source inst into UIT");
+            }
+        }
+    
+        // See if the register is ready or not.
+        if (scoreboard->getReg(renamed_reg)) {
+            DPRINTF(Rename, "[tid:%u]: Register %d (flat: %d) (%s)"
+                    " is ready.\n", inst->threadNumber, renamed_reg->index(),
+                    renamed_reg->flatIndex(),
+                    renamed_reg->className());
+
+            inst->markSrcRegReady(src_idx);
+            /*
+            uint64_t temp = 0;
+            if(renamed_reg->isIntPhysReg() == true) {
+                cpu->readIntReg(renamed_reg);
+                std::cout<<"SN"<<inst->seqNum<<"get source op["<<src_idx<<"] value is:"<<temp<<std::endl;
+            }*/
+        } else {
+            DPRINTF(Rename, "[tid:%u]: Register %d (flat: %d) (%s)"
+                    " is not ready.\n", inst->threadNumber, renamed_reg->index(),
+                    renamed_reg->flatIndex(),
+                    renamed_reg->className());
+        }
+
+        ++renameRenameLookups;
+    }
+    return true;
+}
+
+template <class Impl>
+inline void
+DefaultRename<Impl>::renameSrcRegsSec(const DynInstPtr &inst, ThreadID tid)
+{
+    ThreadContext *tc = inst->tcBase();
+    RenameMap *map = renameMap[tid];
+    unsigned num_src_regs = inst->numSrcRegs();
+
+    // Get the architectual register numbers from the source and
+    // operands, and redirect them to the right physical register.
+    for (int src_idx = 0; src_idx < num_src_regs; src_idx++) {
+        const RegId& src_reg = inst->srcRegIdx(src_idx);
+        PhysRegIdPtr renamed_reg;
+        renamed_reg = inst->renamedSrcRegIdx(src_idx);
+        if(renamed_reg != NULL){
+            DPRINTF(Rename,"[tid:%u]: no need wake up rename, src index:%d,check success ,"
+                "looking up %s arch reg %i, got phys reg %i (%s).\n",
+                tid,src_idx,src_reg.className(),src_reg.index(),
+                renamed_reg->index(),renamed_reg->className());
+            continue;
+        }
+
+        renamed_reg = map->lookupSec(tc->flattenRegId(src_reg));
+        switch (src_reg.classValue()) {
+          case IntRegClass:
+            intRenameLookups++;
+            break;
+          case FloatRegClass:
+            fpRenameLookups++;
+            break;
+          case VecRegClass:
+          case VecElemClass:
+            vecRenameLookups++;
+            break;
+          case VecPredRegClass:
+            vecPredRenameLookups++;
+            break;
+          case CCRegClass:
+          case MiscRegClass:
+            break;
+
+          default:
+            panic("Invalid register class: %d.", src_reg.classValue());
+        }
+
+        DPRINTF(Rename, "[tid:%u]: Looking up %s arch reg %i"
+                ", got phys reg %i (%s)\n", tid,
+                src_reg.className(), src_reg.index(),
+                renamed_reg->index(),
+                renamed_reg->className());
+
+        inst->renameSrcReg(src_idx, renamed_reg);
+        
+        if (scoreboard->getReg(renamed_reg)) {
+            DPRINTF(Rename, "[tid:%u]: Register %d (flat: %d) (%s)"
+                    " is ready.\n", tid, renamed_reg->index(),
+                    renamed_reg->flatIndex(),
+                    renamed_reg->className());
+
+            inst->markSrcRegReady(src_idx);
+            /*
+            uint64_t temp = 0;
+            if(renamed_reg->isIntPhysReg() == true) {
+                cpu->readIntReg(renamed_reg);
+                std::cout<<"SN"<<inst->seqNum<<"get source op["<<src_idx<<"] value is:"<<temp<<std::endl;
+            }*/
+        } else {
+            DPRINTF(Rename, "[tid:%u]: Register %d (flat: %d) (%s)"
+                    " is not ready.\n", tid, renamed_reg->index(),
+                    renamed_reg->flatIndex(),
+                    renamed_reg->className());
+        }
+
+        ++renameRenameLookups;
+    }
+}
 #endif//__CPU_O3_RENAME_IMPL_HH__

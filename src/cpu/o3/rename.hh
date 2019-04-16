@@ -258,7 +258,8 @@ class DefaultRename
     void doSquash(const InstSeqNum &squash_seq_num, ThreadID tid);
 
     /** Removes a committed instruction's rename history. */
-    void removeFromHistory(InstSeqNum inst_seq_num, ThreadID tid);
+    void removeFromHistoryExt(InstSeqNum inst_seq_num, ThreadID tid);
+    void removeFromHistorySec(InstSeqNum inst_seq_num, ThreadID tid);
 
     /** Renames the source registers of an instruction. */
     inline void renameSrcRegs(const DynInstPtr &inst, ThreadID tid);
@@ -306,8 +307,45 @@ class DefaultRename
      * the instruction's sequence number, the arch register, the old physical
      * register for that arch. register, and the new physical register.
      */
-    struct RenameHistory {
-        RenameHistory(InstSeqNum _instSeqNum, const RegId& _archReg,
+    struct RenameHistoryExt {
+        RenameHistoryExt(InstSeqNum _instSeqNum, const RegId& _archReg,
+                      PhysRegIdPtr _newPhysReg,
+                      PhysRegIdPtr _prevPhysReg,
+                      TheISA::PCState _pc,
+                      bool _parkBit)
+            : instSeqNum(_instSeqNum), archReg(_archReg),
+              newPhysReg(_newPhysReg), prevPhysReg(_prevPhysReg),
+              pc(_pc),parkBit(_parkBit)
+        {
+        }
+
+        /** The sequence number of the instruction that renamed. */
+        InstSeqNum instSeqNum;
+        /** The architectural register index that was renamed. */
+        RegId archReg;
+        /** The new physical register that the arch. register is renamed to. */
+        PhysRegIdPtr newPhysReg;
+        /** The old physical register that the arch. register was renamed to.
+         */
+        PhysRegIdPtr prevPhysReg;
+        TheISA::PCState pc;
+        bool parkBit;
+    };
+    
+    typedef typename std::list<RenameHistoryExt>::iterator HisExtIt;
+    /** A per-thread list of all destination register renames, used to either
+     * undo rename mappings or free old physical registers.
+     */
+    std::list<RenameHistoryExt> historyBufferExt[Impl::MaxThreads];
+
+
+
+    /** Holds the information for each destination register rename. It holds
+     * the instruction's sequence number, the arch register, the old physical
+     * register for that arch. register, and the new physical register.
+     *for secong rename map*/
+    struct RenameHistorySec {
+        RenameHistorySec(InstSeqNum _instSeqNum, const RegId& _archReg,
                       PhysRegIdPtr _newPhysReg,
                       PhysRegIdPtr _prevPhysReg)
             : instSeqNum(_instSeqNum), archReg(_archReg),
@@ -325,12 +363,13 @@ class DefaultRename
          */
         PhysRegIdPtr prevPhysReg;
     };
-    
-    typedef typename std::list<RenameHistory>::iterator HisIt;
+
+    typedef typename std::list<RenameHistorySec>::iterator HisSecIt;
     /** A per-thread list of all destination register renames, used to either
      * undo rename mappings or free old physical registers.
      */
-    std::list<RenameHistory> historyBuffer[Impl::MaxThreads];
+    std::list<RenameHistorySec> historyBufferSec[Impl::MaxThreads];
+
 
     /** Pointer to CPU. */
     O3CPU *cpu;
@@ -558,9 +597,11 @@ class DefaultRename
     void renameWakeUpInsts(ThreadID tid);
     int instsWakeNum;
     inline void renameDestRegsSec(const DynInstPtr &inst, ThreadID tid);
+    inline void renameSrcRegsSec(const DynInstPtr &inst, ThreadID tid);
     bool setParkInRAT(DynInstPtr &inst);
     bool findSrcParkBit(DynInstPtr &inst);
-    bool fillInRAT(DynInstPtr &inst);
+    bool renameDestBeforePark(DynInstPtr &inst);
+    bool renameSrcBeforePark(DynInstPtr &inst);
 };
 
 #endif // __CPU_O3_RENAME_HH__

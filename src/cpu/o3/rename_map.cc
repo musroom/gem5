@@ -71,18 +71,18 @@ SimpleRenameMap::init(unsigned size, SimpleFreeList *_freeList,
     zeroReg = RegId(IntRegClass, _zeroReg);
 }
 
-SimpleRenameMap::RenameInfo
+SimpleRenameMap::RenameInfoExt
 SimpleRenameMap::rename(const RegId& arch_reg,TheISA::PCState pc)
 {
     PhysRegIdPtr renamed_reg;
     // Record the current physical register that is renamed to the
     // requested architected register.
     PhysRegIdPtr prev_reg;
-    if(extmap[arch_reg.flatIndex()].preg == NULL) {
-        prev_reg = secmap[arch_reg.flatIndex()];
-    } else {
-        prev_reg = extmap[arch_reg.flatIndex()].preg;
-    }
+    bool prev_parkbit;
+    TheISA::PCState prev_pc;
+    prev_reg = extmap[arch_reg.flatIndex()].preg;
+    prev_parkbit = extmap[arch_reg.flatIndex()].parkBit;
+    prev_pc = extmap[arch_reg.flatIndex()].pc;
 
     // If it's not referencing the zero register, then rename the
     // register.
@@ -93,60 +93,145 @@ SimpleRenameMap::rename(const RegId& arch_reg,TheISA::PCState pc)
         extmap[arch_reg.flatIndex()].pc = pc;
         extmap[arch_reg.flatIndex()].parkBit = false;
 
-        secmap[arch_reg.flatIndex()] = NULL;
       
     } else {
         // Otherwise return the zero register so nothing bad happens.
         assert(prev_reg->isZeroReg());
         renamed_reg = prev_reg;
     }
+        
+    if(renamed_reg == NULL && prev_reg == NULL) {
+        DPRINTF(Rename, "Renamed reg %d to physical reg %d (%d) old mapping was"
+                " %d (%d)\n",
+                arch_reg, -1, -1,
+                -1, -1);
+    }else if(renamed_reg == NULL && prev_reg != NULL) {
+        DPRINTF(Rename, "Renamed reg %d to physical reg %d (%d) old mapping was"
+                " %d (%d)\n",
+                arch_reg, -1, -1,
+                prev_reg->flatIndex(), prev_reg->flatIndex());
 
-    DPRINTF(Rename, "Renamed reg %d to physical reg %d (%d) old mapping was"
-            " %d (%d)\n",
-            arch_reg, renamed_reg->flatIndex(), renamed_reg->flatIndex(),
-            prev_reg->flatIndex(), prev_reg->flatIndex());
+    }else if(renamed_reg != NULL && prev_reg == NULL){
+        DPRINTF(Rename, "Renamed reg %d to physical reg %d (%d) old mapping was"
+                " %d (%d)\n",
+                arch_reg, renamed_reg->flatIndex(), renamed_reg->flatIndex(),
+                -1, -1);
+    }else{
+        DPRINTF(Rename, "Renamed reg %d to physical reg %d (%d) old mapping was"
+                " %d (%d)\n",
+                arch_reg, renamed_reg->flatIndex(), renamed_reg->flatIndex(),
+                prev_reg->flatIndex(), prev_reg->flatIndex());
+    }
 
-    return RenameInfo(renamed_reg, prev_reg);
+
+
+    return RenameInfoExt(renamed_reg, prev_reg,prev_pc,prev_parkbit);
 }
 
 
-SimpleRenameMap::RenameInfo
+SimpleRenameMap::RenameInfoSec
 SimpleRenameMap::renameWakeUp(const RegId& arch_reg)
 {
     PhysRegIdPtr renamed_reg;
     // Record the current physical register that is renamed to the
     // requested architected register.
     PhysRegIdPtr prev_reg;
-    if(extmap[arch_reg.flatIndex()].preg == NULL) {
-        prev_reg = secmap[arch_reg.flatIndex()];
-    } else {
-        prev_reg = extmap[arch_reg.flatIndex()].preg;
-    }
+    prev_reg = secmap[arch_reg.flatIndex()];
 
     // If it's not referencing the zero register, then rename the
     // register.
     if (arch_reg != zeroReg) {
         renamed_reg = freeList->getReg();
         secmap[arch_reg.flatIndex()] = renamed_reg;
-        
-        extmap[arch_reg.flatIndex()].preg = NULL;
-        extmap[arch_reg.flatIndex()].pc = 0;
-        extmap[arch_reg.flatIndex()].parkBit = false;
-
     } else {
         // Otherwise return the zero register so nothing bad happens.
         assert(prev_reg->isZeroReg());
         renamed_reg = prev_reg;
     }
 
-    DPRINTF(Rename, "Renamed reg %d to physical reg %d (%d) old mapping was"
-            " %d (%d)\n",
-            arch_reg, renamed_reg->flatIndex(), renamed_reg->flatIndex(),
-            prev_reg->flatIndex(), prev_reg->flatIndex());
+    
+    if(renamed_reg == NULL && prev_reg == NULL) {
+        DPRINTF(Rename, "Renamed reg %d to physical reg %d (%d) old mapping was"
+                " %d (%d)\n",
+                arch_reg, -1, -1,
+                -1, -1);
+    }else if(renamed_reg == NULL && prev_reg != NULL) {
+        DPRINTF(Rename, "Renamed reg %d to physical reg %d (%d) old mapping was"
+                " %d (%d)\n",
+                arch_reg, -1, -1,
+                prev_reg->flatIndex(), prev_reg->flatIndex());
 
-    return RenameInfo(renamed_reg, prev_reg);
+    }else if(renamed_reg != NULL && prev_reg == NULL){
+        DPRINTF(Rename, "Renamed reg %d to physical reg %d (%d) old mapping was"
+                " %d (%d)\n",
+                arch_reg, renamed_reg->flatIndex(), renamed_reg->flatIndex(),
+                -1, -1);
+    }else{
+        DPRINTF(Rename, "Renamed reg %d to physical reg %d (%d) old mapping was"
+                " %d (%d)\n",
+                arch_reg, renamed_reg->flatIndex(), renamed_reg->flatIndex(),
+                prev_reg->flatIndex(), prev_reg->flatIndex());
+    }
+
+    return RenameInfoSec(renamed_reg, prev_reg);
 }
 
+SimpleRenameMap::RenameInfoExt
+SimpleRenameMap::renameBeforePark(const RegId& arch_reg,TheISA::PCState pc)
+{
+    PhysRegIdPtr renamed_reg;
+    // Record the current physical register that is renamed to the
+    // requested architected register.
+    PhysRegIdPtr prev_reg;
+    bool prev_parkbit;
+    TheISA::PCState prev_pc;
+
+    prev_reg = extmap[arch_reg.flatIndex()].preg;
+    prev_parkbit = extmap[arch_reg.flatIndex()].parkBit;
+    prev_pc = extmap[arch_reg.flatIndex()].pc;
+
+
+    // If it's not referencing the zero register, then rename the
+    // register.
+    if (arch_reg != zeroReg) {
+        renamed_reg = NULL;
+        extmap[arch_reg.flatIndex()].preg = NULL;
+        extmap[arch_reg.flatIndex()].pc = pc;
+        extmap[arch_reg.flatIndex()].parkBit = true;
+
+
+    } else {
+        // Otherwise return the zero register so nothing bad happens.
+        assert(prev_reg->isZeroReg());
+        renamed_reg = prev_reg;
+    }
+    
+    if(renamed_reg == NULL && prev_reg == NULL) {
+        DPRINTF(Rename, "Renamed reg %d to physical reg %d (%d) old mapping was"
+                " %d (%d)\n",
+                arch_reg, -1, -1,
+                -1, -1);
+    }else if(renamed_reg == NULL && prev_reg != NULL) {
+        DPRINTF(Rename, "Renamed reg %d to physical reg %d (%d) old mapping was"
+                " %d (%d)\n",
+                arch_reg, -1, -1,
+                prev_reg->flatIndex(), prev_reg->flatIndex());
+
+    }else if(renamed_reg != NULL && prev_reg == NULL){
+        DPRINTF(Rename, "Renamed reg %d to physical reg %d (%d) old mapping was"
+                " %d (%d)\n",
+                arch_reg, renamed_reg->flatIndex(), renamed_reg->flatIndex(),
+                -1, -1);
+    }else{
+        DPRINTF(Rename, "Renamed reg %d to physical reg %d (%d) old mapping was"
+                " %d (%d)\n",
+                arch_reg, renamed_reg->flatIndex(), renamed_reg->flatIndex(),
+                prev_reg->flatIndex(), prev_reg->flatIndex());
+    }
+
+
+    return RenameInfoExt(renamed_reg, prev_reg,prev_pc,prev_parkbit);
+}
 
 
 /**** UnifiedRenameMap methods ****/
@@ -229,7 +314,7 @@ UnifiedRenameMap::switchMode(VecMode newVecMode)
             for (auto phys_elem = range.first;
                  phys_elem < range.second; idx++, phys_elem++) {
 
-                setEntry(RegId(VecElemClass, vec_idx, idx), &(*phys_elem));
+                setEntrySec(RegId(VecElemClass, vec_idx, idx), &(*phys_elem));
             }
             vec_idx++;
         }
@@ -249,7 +334,7 @@ UnifiedRenameMap::switchMode(VecMode newVecMode)
             VecReg dst = new_RF[i].as<TheISA::VecElem>();
             for (uint32_t l = 0; l < NVecElems; l++) {
                 RegId s_rid(VecElemClass, i, l);
-                PhysRegIdPtr s_prid = vecElemMap.lookup(s_rid);
+                PhysRegIdPtr s_prid = vecElemMap.lookupSec(s_rid);
                 dst[l] = regFile->readVecElem(s_prid);
             }
         }

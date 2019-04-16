@@ -1372,7 +1372,7 @@ InstructionQueue<Impl>::doSquash(ThreadID tid)
             if (dest_reg->isFixedMapping()){
                 continue;
             }
-            dependGraph.dump(dest_reg->flatIndex());
+            //dependGraph.dump(dest_reg->flatIndex());
             assert(dependGraph.empty(dest_reg->flatIndex()));
             dependGraph.clearInst(dest_reg->flatIndex());
         }
@@ -1450,11 +1450,12 @@ InstructionQueue<Impl>::addToProducers(const DynInstPtr &new_inst)
         if (dest_reg->isFixedMapping()) {
             continue;
         }
-
+ 
         if (!dependGraph.empty(dest_reg->flatIndex())) {
-            panic("Dependency graph %i (%s) (flat: %i) not empty!",
+            dependGraph.dump(dest_reg->flatIndex()); 
+            panic("Dependency graph %i (%s) (flat: %i) not empty,dest index:%d!\n",
                   dest_reg->index(), dest_reg->className(),
-                  dest_reg->flatIndex());
+                  dest_reg->flatIndex(),dest_reg_idx);
             /* DPRINTF(IQ,"Dependency graph %i (%s) (flat: %i) not empty!",
                   dest_reg->index(), dest_reg->className(),
                   dest_reg->flatIndex());

@@ -301,7 +301,7 @@ void
 DependencyGraph<DynInstPtr>::dump(PhysRegIndex i)
 {
     DepEntry *curr;
-    cprintf("in empty dump dependence graph");
+    cprintf("in dump dependence graph\n");
     curr = &dependGraph[i];
     if (curr->inst) {
         cprintf("dependGraph[%i]: producer: %s [sn:%lli] consumer: ",
