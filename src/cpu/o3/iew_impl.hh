@@ -1592,7 +1592,7 @@ DefaultIEW<Impl>::tick()
             instQueue.commit(fromCommit->commitInfo[tid].doneSeqNum,tid);
         }
         
-        DPRINTF(IEW,"nonSpecSeqNum: [sn:%lli]i\n",fromCommit->commitInfo[tid].nonSpecSeqNum);
+        DPRINTF(IEW,"nonSpecSeqNum: [sn:%lli]\n",fromCommit->commitInfo[tid].nonSpecSeqNum);
         if (fromCommit->commitInfo[tid].nonSpecSeqNum != 0) {
 
             DPRINTF(IEW,"NonspecInst from thread %i,nonSpecSeqNum: [sn:%lli]\n",tid,fromCommit->commitInfo[tid].nonSpecSeqNum);

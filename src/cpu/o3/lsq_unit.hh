@@ -688,7 +688,8 @@ LSQUnit<Impl>::read(LSQRequest *req, int load_idx)
         // Move the index to one younger
         store_it--;
         assert(store_it->valid());
-        assert(store_it->instruction()->seqNum < load_inst->seqNum);
+        //assert(store_it->instruction()->seqNum < load_inst->seqNum);
+        if(store_it->instruction()->seqNum >= load_inst->seqNum) continue;
         int store_size = store_it->size();
 
         // Cache maintenance instructions go down via the store
