@@ -507,13 +507,15 @@ MemDepUnit<MemDepPred, Impl>::squash(const InstSeqNum &squashed_num,
         }
     }
 
-    ListIt squash_it = instList[tid].end();
-    --squash_it;
+    ListIt squash_it = instList[tid].begin();
 
     MemDepHashIt hash_it;
 
-    while (!instList[tid].empty() &&
-           (*squash_it)->seqNum > squashed_num) {
+    while (!instList[tid].empty()&& squash_it != instList[tid].end()){ 
+        if((*squash_it)->seqNum <= squashed_num){
+            squash_it++;
+            continue;
+        }  
 
         DPRINTF(MemDepUnit, "Squashing inst [sn:%lli]\n",
                 (*squash_it)->seqNum);
@@ -537,7 +539,7 @@ MemDepUnit<MemDepPred, Impl>::squash(const InstSeqNum &squashed_num,
         MemDepEntry::memdep_erase++;
 #endif
 
-        instList[tid].erase(squash_it--);
+        instList[tid].erase(squash_it++);
     }
 
     // Tell the dependency predictor to squash as well.

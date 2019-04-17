@@ -47,6 +47,7 @@
 #include <iostream>
 #include <queue>
 #include <vector>
+#include <unordered_map>
 
 #include "base/logging.hh"
 #include "base/trace.hh"
@@ -67,13 +68,19 @@ class SimpleFreeList
 
     /** The actual free list */
     std::queue<PhysRegIdPtr> freeRegs;
-
+    std::list<PhysRegIdPtr>  dict;
   public:
 
     SimpleFreeList() {};
 
     /** Add a physical register to the free list */
-    void addReg(PhysRegIdPtr reg) { freeRegs.push(reg); }
+    void addReg(PhysRegIdPtr reg) { 
+        
+        if(dict.empty()||dict.end() == find(dict.begin(),dict.end(),reg)){
+            dict.push_back(reg);
+            freeRegs.push(reg); 
+        }
+    }
 
     /** Add physical registers to the free list */
     template<class InputIt>
@@ -81,16 +88,16 @@ class SimpleFreeList
     addRegs(InputIt first, InputIt last) {
         std::for_each(first, last,
             [this](const typename InputIt::value_type& reg) {
-                this->freeRegs.push(&reg);
+                this->addReg(&reg);
             });
     }
-
     /** Get the next available register from the free list */
     PhysRegIdPtr getReg()
     {
         assert(!freeRegs.empty());
         PhysRegIdPtr free_reg = freeRegs.front();
         freeRegs.pop();
+        dict.erase(find(dict.begin(),dict.end(),free_reg));
         return free_reg;
     }
 

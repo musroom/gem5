@@ -136,8 +136,8 @@ class SimpleRenameMap
         {
         }
         RenameInfoExt(){
-            newPhysReg = NULL;
-            prevPhysReg = NULL;
+            newPhysReg = nullptr;
+            prevPhysReg = nullptr;
             prevpc = 0;
             prevparkBit=false;
         }
@@ -195,12 +195,23 @@ class SimpleRenameMap
         
         secmap[arch_reg.flatIndex()] = phys_reg;
     }
+    
  
     void setEntryExt(const RegId& arch_reg, PhysRegIdPtr phys_reg,TheISA::PCState pc,bool parkBit)
     {
         assert(arch_reg.flatIndex() <= extmap.size());
 
         extmap[arch_reg.flatIndex()].preg = phys_reg;
+        extmap[arch_reg.flatIndex()].pc = pc;
+        extmap[arch_reg.flatIndex()].parkBit = parkBit;
+
+    }
+
+    void setEntryExtNULL(const RegId& arch_reg, TheISA::PCState pc,bool parkBit)
+    {
+        assert(arch_reg.flatIndex() <= extmap.size());
+
+        extmap[arch_reg.flatIndex()].preg = NULL;
         extmap[arch_reg.flatIndex()].pc = pc;
         extmap[arch_reg.flatIndex()].parkBit = parkBit;
 
@@ -542,6 +553,7 @@ class UnifiedRenameMap
                   arch_reg.className());
         }
     }
+    
 
 
     void setEntryExt(const RegId& arch_reg, PhysRegIdPtr phys_reg,TheISA::PCState pc,bool parkBit)
@@ -586,7 +598,42 @@ class UnifiedRenameMap
                   arch_reg.className());
         }
     }
+   
+    void setEntryExtNULL(const RegId& arch_reg, TheISA::PCState pc,bool parkBit)
+    {
+        switch (arch_reg.classValue()) {
+          case IntRegClass:
+            return intMap.setEntryExtNULL(arch_reg, pc,parkBit);
 
+          case FloatRegClass:
+            return floatMap.setEntryExtNULL(arch_reg, pc,parkBit);
+
+          case VecRegClass:
+            assert(vecMode == Enums::Full);
+            return vecMap.setEntryExtNULL(arch_reg, pc,parkBit);
+
+          case VecElemClass:
+            assert(vecMode == Enums::Elem);
+            return vecElemMap.setEntryExtNULL(arch_reg, pc,parkBit);
+
+          case VecPredRegClass:
+            return predMap.setEntryExtNULL(arch_reg, pc,parkBit);
+
+          case CCRegClass:
+            return ccMap.setEntryExtNULL(arch_reg, pc,parkBit);
+
+          case MiscRegClass:
+            // Misc registers do not actually rename, so don't change
+            // their mappings.  We end up here when a commit or squash
+            // tries to update or undo a hardwired misc reg nmapping,
+            // which should always be setting it to what it already is.
+            return;
+
+          default:
+            panic("rename setEntry(): unknown reg class %s\n",
+                  arch_reg.className());
+        }
+    }
     /**
      * Return the minimum number of free entries across all of the
      * register classes.  The minimum is used so we guarantee that

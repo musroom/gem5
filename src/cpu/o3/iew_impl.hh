@@ -111,8 +111,8 @@ DefaultIEW<Impl>::DefaultIEW(O3CPU *_cpu, DerivO3CPUParams *params)
 
     updateLSQNextCycle = false;
 
-    skidBufferMax = (renameToIEWDelay + 1) * params->renameWidth;
-    //skidBufferMax = 100;
+    //skidBufferMax = (renameToIEWDelay + 1) * params->renameWidth;
+    skidBufferMax = 100;
 }
 
 template <class Impl>
@@ -1057,7 +1057,7 @@ DefaultIEW<Impl>::dispatchInsts(ThreadID tid)
             (inst->isStore() && ldstQueue.sqFull(tid))) {
             DPRINTF(IEW, "[tid:%i]: Issue: %s has become full.\n",tid,
                     inst->isLoad() ? "LQ" : "SQ");
-            ldstQueue.dumpInsts();
+            //ldstQueue.dumpInsts();
             // Call function to start blocking.
             block(tid);
 

@@ -1049,7 +1049,15 @@ DefaultRename<Impl>::doSquash(const InstSeqNum &squashed_seq_num, ThreadID tid)
         if (hb_it_ext->newPhysReg != hb_it_ext->prevPhysReg) {
             // Tell the rename map to set the architected register to the
             // previous physical register that it was renamed to.
-            renameMap[tid]->setEntryExt(hb_it_ext->archReg, hb_it_ext->prevPhysReg,hb_it_ext->pc,hb_it_ext->parkBit);
+            //DPRINTF(Rename,"set entryext, Arch reg[%s]: %i,pc%s:,parkBit:%d\n",       
+            //hb_it_ext->archReg.className(),hb_it_ext->archReg.index(),hb_it_ext->pc,hb_it_ext->parkBit);
+            if(hb_it_ext->prevPhysReg == NULL) {
+                renameMap[tid]->setEntryExtNULL(hb_it_ext->archReg, 
+                    hb_it_ext->pc,hb_it_ext->parkBit);
+            }else {
+                renameMap[tid]->setEntryExt(hb_it_ext->archReg, 
+                    hb_it_ext->prevPhysReg,hb_it_ext->pc,hb_it_ext->parkBit);
+            }
 
             // Put the renamed physical register back on the free list.
             if(hb_it_ext->newPhysReg !=NULL) 
@@ -1705,10 +1713,10 @@ DefaultRename<Impl>::dumpHistory()
                     (*buf_it).instSeqNum,
                     (*buf_it).archReg.className(),
                     (*buf_it).archReg.index(),
-                    (*buf_it).newPhysReg->index(),
-                    (*buf_it).newPhysReg->className(),
-                    (*buf_it).prevPhysReg->index(),
-                    (*buf_it).prevPhysReg->className());
+                    (*buf_it).newPhysReg != NULL?(*buf_it).newPhysReg->index():-1,
+                    (*buf_it).newPhysReg != NULL?(*buf_it).newPhysReg->className():"-1",
+                    (*buf_it).prevPhysReg != NULL?(*buf_it).prevPhysReg->index():-1,
+                    (*buf_it).prevPhysReg != NULL?(*buf_it).prevPhysReg->className():"-1");
 
             buf_it++;
         }

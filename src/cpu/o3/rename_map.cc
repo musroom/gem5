@@ -195,7 +195,7 @@ SimpleRenameMap::renameBeforePark(const RegId& arch_reg,TheISA::PCState pc)
     // register.
     if (arch_reg != zeroReg) {
         renamed_reg = NULL;
-        extmap[arch_reg.flatIndex()].preg = NULL;
+        extmap[arch_reg.flatIndex()].preg = nullptr;
         extmap[arch_reg.flatIndex()].pc = pc;
         extmap[arch_reg.flatIndex()].parkBit = true;
 

@@ -1281,7 +1281,7 @@ InstructionQueue<Impl>::doSquash(ThreadID tid)
                           squashed_inst->isAtomic() ||
                           (squashed_inst->isStore() &&
                              !squashed_inst->isStoreConditional()));
-
+            DPRINTF(IQ,"is_acq_rel:%d\n",is_acq_rel);
             // Remove the instruction from the dependency list.
             if (is_acq_rel ||
                 (!squashed_inst->isNonSpeculative() &&
@@ -1289,7 +1289,7 @@ InstructionQueue<Impl>::doSquash(ThreadID tid)
                  !squashed_inst->isAtomic() &&
                  !squashed_inst->isMemBarrier() &&
                  !squashed_inst->isWriteBarrier())) {
-
+                DPRINTF(IQ,"remove source\n");
                 for (int src_reg_idx = 0;
                      src_reg_idx < squashed_inst->numSrcRegs();
                      src_reg_idx++)
@@ -1330,6 +1330,7 @@ InstructionQueue<Impl>::doSquash(ThreadID tid)
                     assert(squashed_inst->getFault() != NoFault ||
                            squashed_inst->isMemRef());
                 } else {
+                    DPRINTF(IQ,"nonSpecInsts.erase\n");
 
                     (*ns_inst_it).second = NULL;
 
@@ -1375,6 +1376,7 @@ InstructionQueue<Impl>::doSquash(ThreadID tid)
             //dependGraph.dump(dest_reg->flatIndex());
             assert(dependGraph.empty(dest_reg->flatIndex()));
             dependGraph.clearInst(dest_reg->flatIndex());
+            DPRINTF(IQ,"dependent graph cleanInst\n");
         }
         instList[tid].erase(squash_it--);
         ++iqSquashedInstsExamined;
