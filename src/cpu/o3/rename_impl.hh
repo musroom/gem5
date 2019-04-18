@@ -778,7 +778,10 @@ DefaultRename<Impl>::renameInsts(ThreadID tid)
             serializeAfter(insts_to_rename, tid);
         }
         
-        
+        if(inst->isAtomic() || inst->isLoad() || inst->isStore()) {
+            cpu->iew.ldstQueue.insertReadyToLSQ(inst);
+        }     
+           
         if(gateLTP[tid] == true && (inst->urgent == false || findSrcParkBit(inst) == true)){
              //write in to RAT :set pc and set park bit in Rat
             if(inst->urgent == false) {

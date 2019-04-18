@@ -1034,7 +1034,8 @@ DefaultIEW<Impl>::dispatchInsts(ThreadID tid)
             }*/
             continue;
         }
-
+        
+        ldstQueue.insert_lsq(inst->seqNum,tid);
         // Check for full conditions.
         if (instQueue.isFull(tid)) {
             DPRINTF(IEW, "[tid:%i]: Issue: IQ has become full.\n", tid);
@@ -1075,7 +1076,7 @@ DefaultIEW<Impl>::dispatchInsts(ThreadID tid)
             DPRINTF(IEW, "[tid:%i]: Issue: Memory instruction "
                     "encountered, adding to LSQ.\n", tid);
 
-            ldstQueue.insertStore(inst);
+            //ldstQueue.insertStore(inst);
 
             ++iewDispStoreInsts;
 
@@ -1095,7 +1096,7 @@ DefaultIEW<Impl>::dispatchInsts(ThreadID tid)
 
             // Reserve a spot in the load store queue for this
             // memory access.
-            ldstQueue.insertLoad(inst);
+            //ldstQueue.insertLoad(inst);
 
             ++iewDispLoadInsts;
 
@@ -1106,7 +1107,7 @@ DefaultIEW<Impl>::dispatchInsts(ThreadID tid)
             DPRINTF(IEW, "[tid:%i]: Issue: Memory instruction "
                     "encountered, adding to LSQ.\n", tid);
 
-            ldstQueue.insertStore(inst);
+            //ldstQueue.insertStore(inst);
 
             ++iewDispStoreInsts;
 

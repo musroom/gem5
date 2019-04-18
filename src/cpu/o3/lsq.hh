@@ -1025,6 +1025,8 @@ class LSQ
     Rename *rename_ptr;
   public:
     void setRenameStage1(Rename *rename_stage);
+    void insert_lsq(InstSeqNum seq,ThreadID tid);
+    void insertReadyToLSQ(const DynInstPtr &inst);
 };
 
 template <class Impl>

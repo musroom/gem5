@@ -908,7 +908,13 @@ LSQUnit<Impl>::squash(const InstSeqNum &squashed_num)
         storeQueue.pop_back();
         ++lsqSquashedStores;
     }
+    while(!readyToLSQ.empty() && readyToLSQ.back()->seqNum > squashed_num) {
+        DPRINTF(LSQUnit,"squash readyToLSQ,size:%d,[sn:%lli],\n",readyToLSQ.size()-1,
+            readyToLSQ.back()->seqNum);
+        readyToLSQ.pop_back();
+    }
 }
+    
 
 template <class Impl>
 void
@@ -1172,6 +1178,15 @@ LSQUnit<Impl>::setRenameStage2(Rename *rename_stage) {
     renameStage = rename_stage;
 }
         
+template <class Impl>
+void
+LSQUnit<Impl>::insertReadyToLSQ(const DynInstPtr &inst) {
+    assert(inst->isAtomic() || inst->isLoad() || inst->isStore());
+    readyToLSQ.push_back(inst);
+    DPRINTF(LSQUnit,"push a instruction in readyToLSQ,size:%d,sn:[sn:%i].\n",
+        readyToLSQ.size(),inst->seqNum);
+}
+
 
 
 

@@ -1109,9 +1109,30 @@ LSQ<Impl>::SplitDataRequest::isCacheBlockHit(Addr blockAddr, Addr blockMask)
     return is_hit;
 }
 
+template<class Impl>
+void
+LSQ<Impl>::insert_lsq(InstSeqNum seq,ThreadID tid) {
+    if(sqFull(tid) || lqFull(tid) || thread[tid].readyToLSQ.empty()) return;
+    
+    while(!thread[tid].readyToLSQ.empty() && thread[tid].readyToLSQ.front()->seqNum <= seq && !sqFull(tid) &&!lqFull(tid)) {
+        DynInstPtr inst = thread[tid].readyToLSQ.front();  
+        if(inst->isAtomic() || inst->isStore()) {
+            insertStore(inst);
+        }else if(inst->isLoad()) {
+            insertLoad(inst);
+        }else{
+            panic("error inst type to lsq,[sn:%lli]\n",inst->seqNum);
+        } 
+        thread[tid].readyToLSQ.pop_front();
+    }
+}
 
+template<class Impl>
+void
+LSQ<Impl>::insertReadyToLSQ(const DynInstPtr &inst)
+{
+    ThreadID tid = inst->threadNumber;
 
-
-
-
+    thread[tid].insertReadyToLSQ(inst);
+}
 #endif//__CPU_O3_LSQ_IMPL_HH__

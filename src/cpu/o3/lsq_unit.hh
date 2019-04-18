@@ -476,6 +476,7 @@ class LSQUnit
 
     /** The load queue. */
     LoadQueue loadQueue;
+    std::list<DynInstPtr> readyToLSQ;
 
   private:
     /** The number of places to shift addresses in the LSQ before checking
@@ -612,6 +613,7 @@ class LSQUnit
   public:
     void setLTP(Cycles curCycle,uint8_t depth,ThreadID tid);
     void setRenameStage2(Rename *rename_stage);
+    void insertReadyToLSQ(const DynInstPtr &inst);
 };
 
 template <class Impl>
