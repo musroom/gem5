@@ -209,4 +209,5 @@ def ExternalCacheFactory(port_type):
     def make(name):
         return ExternalCache(port_data=name, port_type=port_type,
                              addr_ranges=[AllMemory])
+    return make
    
