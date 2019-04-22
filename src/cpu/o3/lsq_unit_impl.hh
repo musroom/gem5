@@ -1151,9 +1151,10 @@ LSQUnit<Impl>::setLTP(Cycles curCycle,uint8_t depth,ThreadID tid)
 {
     bool old_sta = renameStage->getLTPStatus(tid);
     bool sta = old_sta;
+    int cache_level = 3;
     // if have miss need to turn on the LTP ,if time out need to turn off rhe ltp
     // mothing happened we should keep the status
-    if(depth >= 1) {
+    if(depth >= cache_level) {
         timer = dramLatency + curCycle;
         sta = true;
     }else if(curCycle == timer) {

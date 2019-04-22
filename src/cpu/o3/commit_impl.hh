@@ -1460,6 +1460,7 @@ DefaultCommit<Impl>::updateComInstStats(const DynInstPtr &inst)
     //
     //  Memory references
     //
+    int cache_level = 3;
     if (inst->isMemRef()) {
         statComRefs[tid]++;
 
@@ -1471,7 +1472,7 @@ DefaultCommit<Impl>::updateComInstStats(const DynInstPtr &inst)
             statComAmos[tid]++;
         }
         
-        if(inst->depth >= 1) {
+        if(inst->depth >= cache_level) {
             decodeStage->urgInsert(inst, tid);
             //std::cout<<"insert into  UIT from committed"<<std::endl;
         }
