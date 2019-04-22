@@ -1371,6 +1371,7 @@ InstructionQueue<Impl>::doSquash(ThreadID tid)
             PhysRegIdPtr dest_reg =
                 squashed_inst->renamedDestRegIdx(dest_reg_idx);
             if (dest_reg->isFixedMapping()){
+                DPRINTF (IQ,"dest index:%d,isFixedMapping\n"); 
                 continue;
             }
             //dependGraph.dump(dest_reg->flatIndex());

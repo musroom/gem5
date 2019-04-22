@@ -363,7 +363,7 @@ FullO3CPU<Impl>::FullO3CPU(DerivO3CPUParams *params)
     rename.setRenameMap(renameMap);
     commit.setRenameMap(commitRenameMap);
     rename.setFreeList(&freeList);
-    std::cout<<"finish init"<<std::endl;
+    //std::cout<<"finish init"<<std::endl;
     // Setup the ROB for whichever stages need it.
     commit.setROB(&rob);
 

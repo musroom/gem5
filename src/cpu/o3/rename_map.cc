@@ -301,6 +301,7 @@ UnifiedRenameMap::switchFreeList(UnifiedFreeList* freeList)
 void
 UnifiedRenameMap::switchMode(VecMode newVecMode)
 {
+    std::cout<<"switchMode!!\n"<<std::endl;
     if (newVecMode == Enums::Elem && vecMode == Enums::Full) {
 
         /* Switch to vector element rename mode. */

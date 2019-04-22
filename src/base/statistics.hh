@@ -1252,6 +1252,7 @@ class Vector2dBase : public DataWrapVec2d<Derived, Vector2dInfoProxy>
     Derived &
     init(size_type _x, size_type _y)
     {
+        //std::cout<<"x:"<<_x<<"y:"<<_y<<std::endl;
         assert(_x > 0 && _y > 0 && "sizes must be positive!");
         assert(!storage && "already initialized");
 

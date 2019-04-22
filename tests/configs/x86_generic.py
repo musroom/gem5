@@ -100,6 +100,7 @@ class LinuxX86FSSystemUniprocessor(LinuxX86SystemBuilder,
         LinuxX86SystemBuilder.__init__(self)
 
     def create_caches_private(self, cpu):
+        print "I am in create_caches_private()!"
         cpu.addTwoLevelCacheHierarchy(L1_ICache(size='32kB', assoc=1),
                                       L1_DCache(size='32kB', assoc=4),
                                       L2Cache(size='4MB', assoc=8),

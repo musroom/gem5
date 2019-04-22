@@ -1102,6 +1102,7 @@ CoherentXBar::regStats()
 {
     // register the stats of the base class and our layers
     BaseXBar::regStats();
+    //std::cout<<"name:"<<name()<<std::endl;
     for (auto l: reqLayers)
         l->regStats();
     for (auto l: respLayers)

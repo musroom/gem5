@@ -537,6 +537,7 @@ BaseXBar::regStats()
     ClockedObject::regStats();
 
     using namespace Stats;
+    //std::cout<<"l->regStats transDist name:"<<name()<<std::endl;
 
     transDist
         .init(MemCmd::NUM_MEM_CMDS)
@@ -550,6 +551,8 @@ BaseXBar::regStats()
         const std::string &cstr = cmd.toString();
         transDist.subname(i, cstr);
     }
+    
+    //std::cout<<"l->regStats pktCount name:"<<name()<<std::endl;
 
     pktCount
         .init(slavePorts.size(), masterPorts.size())
@@ -557,6 +560,8 @@ BaseXBar::regStats()
         .desc("Packet count per connected master and slave (bytes)")
         .flags(total | nozero | nonan);
 
+    //std::cout<<"l->regStats pktSize name:"<<name()<<std::endl;
+    
     pktSize
         .init(slavePorts.size(), masterPorts.size())
         .name(name() + ".pkt_size")
