@@ -78,7 +78,8 @@ class SimpleFreeList
         
         if(dict.empty()||dict.end() == find(dict.begin(),dict.end(),reg)){
             dict.push_back(reg);
-            freeRegs.push(reg); 
+            freeRegs.push(reg);
+            DPRINTF(FreeList, "success add free physical reg %i (%i).\n",reg->index(),reg->flatIndex());   
         }
     }
 

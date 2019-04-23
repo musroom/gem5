@@ -1041,7 +1041,7 @@ DefaultRename<Impl>::doSquash(const InstSeqNum &squashed_seq_num, ThreadID tid)
         assert(hb_it_ext != historyBufferExt[tid].end());
 
         DPRINTF(Rename, "[tid:%u]: Removing history entry with sequence "
-                "number %i.\n", tid, hb_it_ext->instSeqNum);
+                "number [sn:%i].\n", tid, hb_it_ext->instSeqNum);
 
         // Undo the rename mapping only if it was really a change.
         // Special regs that are not really renamed (like misc regs
@@ -1065,6 +1065,8 @@ DefaultRename<Impl>::doSquash(const InstSeqNum &squashed_seq_num, ThreadID tid)
             // Put the renamed physical register back on the free list.
             if(hb_it_ext->newPhysReg !=NULL) 
             {
+                DPRINTF(Rename,"Freeing up new rename of reg %s(%s),[sn:%i]",
+                    hb_it_ext->newPhysReg->index(),hb_it_ext->newPhysReg->className(),hb_it_ext->instSeqNum); 
                 freeList->addReg(hb_it_ext->newPhysReg);
             }
         }
@@ -1102,11 +1104,18 @@ DefaultRename<Impl>::doSquash(const InstSeqNum &squashed_seq_num, ThreadID tid)
         // waste of time to update the rename table, we definitely
         // don't want to put these on the free list.
         if (hb_it_sec->newPhysReg != hb_it_sec->prevPhysReg) {
+            if(hb_it_sec->prevPhysReg == NULL) {
+                renameMap[tid]->setEntrySecNULL(hb_it_sec->archReg);
+            }else {
+                renameMap[tid]->setEntrySec(hb_it_sec->archReg, hb_it_sec->prevPhysReg);
+            }
             // Tell the rename map to set the architected register to the
             // previous physical register that it was renamed to.
-            renameMap[tid]->setEntrySec(hb_it_sec->archReg, hb_it_sec->prevPhysReg);
-
+            
             // Put the renamed physical register back on the free list.
+            assert(hb_it_sec->newPhysReg != NULL);
+            DPRINTF(Rename,"Freeing up new rename of reg %s(%s),[sn:%i]",
+                hb_it_sec->newPhysReg->index(),hb_it_sec->newPhysReg->className(),hb_it_sec->instSeqNum); 
             freeList->addReg(hb_it_sec->newPhysReg);
         }
 
@@ -1123,10 +1132,10 @@ DefaultRename<Impl>::doSquash(const InstSeqNum &squashed_seq_num, ThreadID tid)
 
     //squash LTP
     while(secRenameQueue[tid].empty()!= true) {
-        if(secRenameQueue[tid].front()->seqNum >= squashed_seq_num) {
+        if(secRenameQueue[tid].back()->seqNum > squashed_seq_num) {
             DPRINTF(Rename, "[tid:%u]: Removing inst seqNum:%i in secRenameQueue.\n"
-                ,tid, secRenameQueue[tid].front()->seqNum);
-            secRenameQueue[tid].pop();
+                ,tid, secRenameQueue[tid].back()->seqNum);
+            secRenameQueue[tid].pop_back();
         } else {
             break;
         }
@@ -1134,10 +1143,10 @@ DefaultRename<Impl>::doSquash(const InstSeqNum &squashed_seq_num, ThreadID tid)
     DPRINTF(Rename,"[tid:%u]:secRenameQueue size is %d\n",tid,secRenameQueue[tid].size()); 
  
     while(LTP[tid].empty()!=true) {
-        if(LTP[tid].front()->seqNum >= squashed_seq_num) {
+        if(LTP[tid].back()->seqNum > squashed_seq_num) {
             DPRINTF(Rename, "[tid:%u]: Removing inst seqNum:%i in LTP.\n"
-                ,tid, LTP[tid].front()->seqNum);
-            LTP[tid].pop();
+                ,tid, LTP[tid].back()->seqNum);
+            LTP[tid].pop_back();
         } else {
             break;
         }
@@ -1236,17 +1245,23 @@ DefaultRename<Impl>::removeFromHistorySec(InstSeqNum inst_seq_num, ThreadID tid)
            hb_it != historyBufferSec[tid].end() &&
            hb_it->instSeqNum <= inst_seq_num) {
 
-        DPRINTF(Rename, "[tid:%u]: Freeing up older rename of reg %i (%s), "
+        // Don't free special phys regs like misc and zero regs, which
+        // can be recognized because the new mapping is the same as
+        // the old one.
+        if (hb_it->newPhysReg != hb_it->prevPhysReg) {
+            if(hb_it->prevPhysReg == NULL) {
+                DPRINTF(Rename, "[tid:%u]: Freeing up older rename NULL,[sn:%lli].\n",
+                tid, 
+                hb_it->instSeqNum);
+            }else{
+                DPRINTF(Rename, "[tid:%u]: Freeing up older rename of reg %i (%s), "
                 "[sn:%lli].\n",
                 tid, hb_it->prevPhysReg->index(),
                 hb_it->prevPhysReg->className(),
                 hb_it->instSeqNum);
 
-        // Don't free special phys regs like misc and zero regs, which
-        // can be recognized because the new mapping is the same as
-        // the old one.
-        if (hb_it->newPhysReg != hb_it->prevPhysReg) {
-            freeList->addReg(hb_it->prevPhysReg);
+                freeList->addReg(hb_it->prevPhysReg);
+            }
         }
 
         ++renameCommittedMaps;
@@ -1774,7 +1789,7 @@ DefaultRename<Impl>::insertLTP(DynInstPtr &inst,ThreadID tid)
         DPRINTF(Rename, "the LTP is full wake up inst.\n");
         wakeUpInst(LTP[tid].front());
     }
-    LTP[tid].push(inst);
+    LTP[tid].push_back(inst);
     DPRINTF(Rename, "insert LTP LTP size:%d,secRenameQueue size:%d,sn:%i,LTP top is sn:%i.\n",
         LTP[tid].size(),secRenameQueue[tid].size(),inst->seqNum,LTP[tid].front()->seqNum);
     return true;
@@ -1798,8 +1813,8 @@ DefaultRename<Impl>::wakeUpInst(DynInstPtr &inst)
         return false;
     }
     
-    LTP[tid].pop();
-    secRenameQueue[tid].push(inst_top);
+    LTP[tid].pop_front();
+    secRenameQueue[tid].push_back(inst_top);
     DPRINTF(Rename, "[tid:%u]:waiting in waked up queue sn:%i,LTP size:%d,secRenameQueue size:%d:\n"
            ,tid,inst->seqNum,LTP[tid].size(),secRenameQueue[tid].size());
     return true;
@@ -1899,7 +1914,7 @@ DefaultRename<Impl>::renameWakeUpInsts(ThreadID tid)
                     "squashed, skipping.when rename wake up instructions\n", 
                     tid, inst->seqNum,inst->pcState());
 
-            secRenameQueue[tid].pop();
+            secRenameQueue[tid].pop_front();
             ++renameSquashedInsts;
 
             // Decrement how many instructions are available.
@@ -1924,7 +1939,7 @@ DefaultRename<Impl>::renameWakeUpInsts(ThreadID tid)
 
             break;
         }
-        secRenameQueue[tid].pop();
+        secRenameQueue[tid].pop_front();
          
         // Handle serializeAfter/serializeBefore instructions.
         // serializeAfter marks the next instruction as serializeBefore.

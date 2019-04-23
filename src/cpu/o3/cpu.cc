@@ -301,14 +301,14 @@ FullO3CPU<Impl>::FullO3CPU(DerivO3CPUParams *params)
             // want special treatment for the zero register at this point
             PhysRegIdPtr phys_reg = freeList.getIntReg();
             //PhysRegIdPtr phys_reg1 = freeList.getIntReg();
-            renameMap[tid].setEntrySec(RegId(IntRegClass, ridx), phys_reg);
+            renameMap[tid].setEntrySecInit(RegId(IntRegClass, ridx), phys_reg);
             renameMap[tid].setEntryExt(RegId(IntRegClass, ridx), phys_reg,0,false);
             commitRenameMap[tid].setEntrySec(RegId(IntRegClass, ridx), phys_reg);
         }
         for (RegIndex ridx = 0; ridx < TheISA::NumFloatRegs; ++ridx) {
             PhysRegIdPtr phys_reg = freeList.getFloatReg();
             //PhysRegIdPtr phys_reg1 = freeList.getFloatReg();
-            renameMap[tid].setEntrySec(RegId(FloatRegClass, ridx), phys_reg);
+            renameMap[tid].setEntrySecInit(RegId(FloatRegClass, ridx), phys_reg);
             renameMap[tid].setEntryExt(RegId(FloatRegClass, ridx), phys_reg,0,false);
             commitRenameMap[tid].setEntrySec(
                     RegId(FloatRegClass, ridx), phys_reg);
@@ -323,7 +323,7 @@ FullO3CPU<Impl>::FullO3CPU(DerivO3CPUParams *params)
                 RegId rid = RegId(VecRegClass, ridx);
                 PhysRegIdPtr phys_reg = freeList.getVecReg();
                 //PhysRegIdPtr phys_reg1 = freeList.getVecReg();
-                renameMap[tid].setEntrySec(rid,phys_reg);
+                renameMap[tid].setEntrySecInit(rid,phys_reg);
                 renameMap[tid].setEntryExt(rid, phys_reg,0,false);
                 commitRenameMap[tid].setEntrySec(rid, phys_reg);
             }
@@ -335,7 +335,7 @@ FullO3CPU<Impl>::FullO3CPU(DerivO3CPUParams *params)
                     RegId lrid = RegId(VecElemClass, ridx, ldx);
                     PhysRegIdPtr phys_elem = freeList.getVecElem();
                     //PhysRegIdPtr phys_elem1 = freeList.getVecElem();
-                    renameMap[tid].setEntrySec(lrid, phys_elem);
+                    renameMap[tid].setEntrySecInit(lrid, phys_elem);
                     renameMap[tid].setEntryExt(lrid, phys_elem,0,false);
                     commitRenameMap[tid].setEntrySec(lrid, phys_elem);
                 }
@@ -345,7 +345,7 @@ FullO3CPU<Impl>::FullO3CPU(DerivO3CPUParams *params)
         for (RegIndex ridx = 0; ridx < TheISA::NumVecPredRegs; ++ridx) {
             PhysRegIdPtr phys_reg = freeList.getVecPredReg();
             //PhysRegIdPtr phys_reg1 = freeList.getVecPredReg();
-            renameMap[tid].setEntrySec(RegId(VecPredRegClass, ridx), phys_reg);
+            renameMap[tid].setEntrySecInit(RegId(VecPredRegClass, ridx), phys_reg);
             renameMap[tid].setEntryExt(RegId(VecPredRegClass, ridx), phys_reg,0,false);
             commitRenameMap[tid].setEntrySec(
                     RegId(VecPredRegClass, ridx), phys_reg);
@@ -354,7 +354,7 @@ FullO3CPU<Impl>::FullO3CPU(DerivO3CPUParams *params)
         for (RegIndex ridx = 0; ridx < TheISA::NumCCRegs; ++ridx) {
             PhysRegIdPtr phys_reg = freeList.getCCReg();
             //PhysRegIdPtr phys_reg1 = freeList.getCCReg();
-            renameMap[tid].setEntrySec(RegId(CCRegClass, ridx),phys_reg);
+            renameMap[tid].setEntrySecInit(RegId(CCRegClass, ridx),phys_reg);
             renameMap[tid].setEntryExt(RegId(CCRegClass, ridx), phys_reg,0,false);
             commitRenameMap[tid].setEntrySec(RegId(CCRegClass, ridx), phys_reg);
         }
@@ -363,7 +363,7 @@ FullO3CPU<Impl>::FullO3CPU(DerivO3CPUParams *params)
     rename.setRenameMap(renameMap);
     commit.setRenameMap(commitRenameMap);
     rename.setFreeList(&freeList);
-    //std::cout<<"finish init"<<std::endl;
+    std::cout<<"finish init"<<std::endl;
     // Setup the ROB for whichever stages need it.
     commit.setROB(&rob);
 
@@ -858,7 +858,7 @@ FullO3CPU<Impl>::insertThread(ThreadID tid)
          reg_id.index()++) {
         PhysRegIdPtr phys_reg = freeList.getIntReg();
         //PhysRegIdPtr phys_reg1 = freeList.getIntReg();
-        renameMap[tid].setEntrySec(reg_id,phys_reg);
+        renameMap[tid].setEntrySecInit(reg_id,phys_reg);
         renameMap[tid].setEntryExt(reg_id, phys_reg,0,false);
         scoreboard.setReg(phys_reg);
         //scoreboard.setReg(phys_reg1);
@@ -869,7 +869,7 @@ FullO3CPU<Impl>::insertThread(ThreadID tid)
          reg_id.index()++) {
         PhysRegIdPtr phys_reg = freeList.getFloatReg();
         //PhysRegIdPtr phys_reg1 = freeList.getFloatReg();
-        renameMap[tid].setEntrySec(reg_id, phys_reg);
+        renameMap[tid].setEntrySecInit(reg_id, phys_reg);
         renameMap[tid].setEntryExt(reg_id, phys_reg,0,false);
         scoreboard.setReg(phys_reg);
         //scoreboard.setReg(phys_reg1);
@@ -880,7 +880,7 @@ FullO3CPU<Impl>::insertThread(ThreadID tid)
          reg_id.index()++) {
         PhysRegIdPtr phys_reg = freeList.getCCReg();
         //PhysRegIdPtr phys_reg1 = freeList.getCCReg();
-        renameMap[tid].setEntrySec(reg_id, phys_reg);
+        renameMap[tid].setEntrySecInit(reg_id, phys_reg);
         renameMap[tid].setEntryExt(reg_id, phys_reg,0,false);
         scoreboard.setReg(phys_reg);
         //scoreboard.setReg(phys_reg1);

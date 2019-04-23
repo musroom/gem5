@@ -192,9 +192,22 @@ class SimpleRenameMap
     void setEntrySec(const RegId& arch_reg, PhysRegIdPtr phys_reg)
     {
         assert(arch_reg.flatIndex() <= secmap.size());
-        
         secmap[arch_reg.flatIndex()] = phys_reg;
     }
+
+    void setEntrySecInit(const RegId& arch_reg, PhysRegIdPtr phys_reg)
+    {
+        assert(arch_reg.flatIndex() <= secmap.size());
+        if(arch_reg != zeroReg) secmap[arch_reg.flatIndex()] = NULL;
+        else secmap[arch_reg.flatIndex()] = phys_reg;
+    }
+    
+    void setEntrySecNULL(const RegId& arch_reg)
+    {
+        assert(arch_reg.flatIndex() <= secmap.size());
+        secmap[arch_reg.flatIndex()] = NULL;
+    }
+
     
  
     void setEntryExt(const RegId& arch_reg, PhysRegIdPtr phys_reg,TheISA::PCState pc,bool parkBit)
@@ -554,6 +567,84 @@ class UnifiedRenameMap
         }
     }
     
+    void setEntrySecInit(const RegId& arch_reg, PhysRegIdPtr phys_reg)
+    {
+        switch (arch_reg.classValue()) {
+          case IntRegClass:
+            assert(phys_reg->isIntPhysReg());
+            return intMap.setEntrySecInit(arch_reg, phys_reg);
+
+          case FloatRegClass:
+            assert(phys_reg->isFloatPhysReg());
+            return floatMap.setEntrySecInit(arch_reg, phys_reg);
+
+          case VecRegClass:
+            assert(phys_reg->isVectorPhysReg());
+            assert(vecMode == Enums::Full);
+            return vecMap.setEntrySecInit(arch_reg, phys_reg);
+
+          case VecElemClass:
+            assert(phys_reg->isVectorPhysElem());
+            assert(vecMode == Enums::Elem);
+            return vecElemMap.setEntrySecInit(arch_reg, phys_reg);
+
+          case VecPredRegClass:
+            assert(phys_reg->isVecPredPhysReg());
+            return predMap.setEntrySecInit(arch_reg, phys_reg);
+
+          case CCRegClass:
+            assert(phys_reg->isCCPhysReg());
+            return ccMap.setEntrySecInit(arch_reg, phys_reg);
+
+          case MiscRegClass:
+            // Misc registers do not actually rename, so don't change
+            // their mappings.  We end up here when a commit or squash
+            // tries to update or undo a hardwired misc reg nmapping,
+            // which should always be setting it to what it already is.
+            assert(phys_reg == lookupSec(arch_reg));
+            return;
+
+          default:
+            panic("rename setEntryInit(): unknown reg class %s\n",
+                  arch_reg.className());
+        }
+    }
+    
+    void setEntrySecNULL(const RegId& arch_reg)
+    {
+        switch (arch_reg.classValue()) {
+          case IntRegClass:
+            return intMap.setEntrySecNULL(arch_reg);
+
+          case FloatRegClass:
+            return floatMap.setEntrySecNULL(arch_reg);
+
+          case VecRegClass:
+            assert(vecMode == Enums::Full);
+            return vecMap.setEntrySecNULL(arch_reg);
+
+          case VecElemClass:
+            assert(vecMode == Enums::Elem);
+            return vecElemMap.setEntrySecNULL(arch_reg);
+
+          case VecPredRegClass:
+            return predMap.setEntrySecNULL(arch_reg);
+
+          case CCRegClass:
+            return ccMap.setEntrySecNULL(arch_reg);
+
+          case MiscRegClass:
+            // Misc registers do not actually rename, so don't change
+            // their mappings.  We end up here when a commit or squash
+            // tries to update or undo a hardwired misc reg nmapping,
+            // which should always be setting it to what it already is.
+            return;
+
+          default:
+            panic("rename setEntryNULL(): unknown reg class %s\n",
+                  arch_reg.className());
+        }
+    }
 
 
     void setEntryExt(const RegId& arch_reg, PhysRegIdPtr phys_reg,TheISA::PCState pc,bool parkBit)

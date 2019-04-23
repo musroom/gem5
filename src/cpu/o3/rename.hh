@@ -92,7 +92,7 @@ class DefaultRename
     // using a deque instead of a queue. (Most other stages use a
     // queue)
     typedef std::deque<DynInstPtr> InstQueue;
-    typedef std::queue<DynInstPtr> InstQueue_normal;
+    //typedef std::queue<DynInstPtr> InstQueue_normal;
 
   public:
     /** Overall rename status. Used to determine if the CPU can
@@ -583,10 +583,10 @@ class DefaultRename
     /** Number of instructions inserted into skid buffers. */
     Stats::Scalar renameSkidInsts;
   private:
-    InstQueue_normal LTP[Impl::MaxThreads];
+    InstQueue LTP[Impl::MaxThreads];
     unsigned LTPMax;
   public:
-    InstQueue_normal secRenameQueue[Impl::MaxThreads];
+    InstQueue secRenameQueue[Impl::MaxThreads];
     int maxSecRename;
     void openLTP(ThreadID tid);
     void closeLTP(ThreadID tid);
