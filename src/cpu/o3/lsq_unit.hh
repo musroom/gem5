@@ -620,14 +620,20 @@ template <class Impl>
 Fault
 LSQUnit<Impl>::read(LSQRequest *req, int load_idx)
 {
+    DPRINTF(LSQUnit,"0 loadQueue index:%d\n",load_idx);
+    if(load_idx < 0) dumpInsts();
     LQEntry& load_req = loadQueue[load_idx];
     const DynInstPtr& load_inst = load_req.instruction();
-
+    DPRINTF(LSQUnit,"1 read inst [sn:%i]\n",load_inst->seqNum);
+    
     load_req.setRequest(req);
+    DPRINTF(LSQUnit,"2 read inst [sn:%i]\n",load_inst->seqNum);
+    
     assert(load_inst);
+    DPRINTF(LSQUnit,"3 read inst [sn:%i]\n",load_inst->seqNum);
 
     assert(!load_inst->isExecuted());
-
+    DPRINTF(LSQUnit,"4 read inst [sn:%i]\n",load_inst->seqNum);
     // Make sure this isn't a strictly ordered load
     // A bit of a hackish way to get strictly ordered accesses to work
     // only if they're at the head of the LSQ and are ready to commit
@@ -660,6 +666,7 @@ LSQUnit<Impl>::read(LSQRequest *req, int load_idx)
             req->mainRequest()->getPaddr(), req->isSplit() ? " split" : "");
 
     if (req->mainRequest()->isLLSC()) {
+        DPRINTF(LSQUnit,"3\n");
         // Disable recording the result temporarily.  Writing to misc
         // regs normally updates the result, but this is not the
         // desired behavior when handling store conditionals.
@@ -669,6 +676,7 @@ LSQUnit<Impl>::read(LSQRequest *req, int load_idx)
     }
 
     if (req->mainRequest()->isMmappedIpr()) {
+        DPRINTF(LSQUnit,"4\n");
         assert(!load_inst->memData);
         load_inst->memData = new uint8_t[64];
 
@@ -686,14 +694,16 @@ LSQUnit<Impl>::read(LSQRequest *req, int load_idx)
     auto store_it = load_inst->sqIt;
     assert (store_it >= storeWBIt);
     // End once we've reached the top of the LSQ
+    DPRINTF(LSQUnit,"in this step1\n");
     while (store_it != storeWBIt) {
         // Move the index to one younger
         store_it--;
         assert(store_it->valid());
         //assert(store_it->instruction()->seqNum < load_inst->seqNum);
         if(store_it->instruction()->seqNum >= load_inst->seqNum) continue;
+        DPRINTF(LSQUnit,"6\n");
         int store_size = store_it->size();
-
+        DPRINTF(LSQUnit,"in this step2,store size:%d\n",store_size);
         // Cache maintenance instructions go down via the store
         // path but they carry no data and they shouldn't be
         // considered for forwarding

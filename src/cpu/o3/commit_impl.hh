@@ -1161,10 +1161,10 @@ DefaultCommit<Impl>::commitHead(const DynInstPtr &head_inst, unsigned inst_num)
 {
     assert(head_inst);
     
+    /* 
     //std::cout<<"commithead:: SN:"<<head_inst->seqNum<<" val:"<<head_inst->res<<" ";
     std::cout<<"resultvalue:"<<head_inst->res<<" ";
     head_inst->dump();
-    /*
     unsigned num_src_regs = head_inst->numSrcRegs();
     for (int src_idx = 0; src_idx < num_src_regs; src_idx++) {
         const RegId& src_reg = head_inst->srcRegIdx(src_idx);
@@ -1189,8 +1189,8 @@ DefaultCommit<Impl>::commitHead(const DynInstPtr &head_inst, unsigned inst_num)
         }
     }
     std::cout<<std::endl;
+    
     */
-
 
 
     ThreadID tid = head_inst->threadNumber;

@@ -1123,7 +1123,7 @@ LSQUnit<Impl>::dumpInsts() const
 
     for (const auto& e: loadQueue) {
         const DynInstPtr &inst(e.instruction());
-        cprintf("%s.[sn:%i] ", inst->pcState(), inst->seqNum);
+        cprintf("%s.[sn:%i],inx:%d ", inst->pcState(), inst->seqNum,inst->lqIdx);
     }
     cprintf("\n");
 

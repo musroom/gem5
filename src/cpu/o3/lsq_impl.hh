@@ -1112,10 +1112,24 @@ LSQ<Impl>::SplitDataRequest::isCacheBlockHit(Addr blockAddr, Addr blockMask)
 template<class Impl>
 void
 LSQ<Impl>::insert_lsq(InstSeqNum seq,ThreadID tid) {
-    if(sqFull(tid) || lqFull(tid) || thread[tid].readyToLSQ.empty()) return;
-    
-    while(!thread[tid].readyToLSQ.empty() && thread[tid].readyToLSQ.front()->seqNum <= seq && !sqFull(tid) &&!lqFull(tid)) {
+  
+    while(!thread[tid].readyToLSQ.empty() && thread[tid].readyToLSQ.front()->seqNum <= seq) {
         DynInstPtr inst = thread[tid].readyToLSQ.front();  
+        if (inst->isAtomic() && thread[tid].sqFull()){
+            DPRINTF(LSQ,"SQ is full can't insert!\n");
+            return;
+        }
+        
+        if(inst->isLoad() && thread[tid].lqFull()) {
+            DPRINTF(LSQ,"LQ is full can't insert!\n");
+            return;
+        }
+        if(inst->isStore() && thread[tid].sqFull()){
+            DPRINTF(LSQ,"SQ is full can't insert!\n");
+            return;
+        }
+      
+
         if(inst->isAtomic() || inst->isStore()) {
             insertStore(inst);
         }else if(inst->isLoad()) {

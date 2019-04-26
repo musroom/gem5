@@ -526,7 +526,8 @@ def run(options, root, testsys, cpu_class):
                                       for i in xrange(np)]
 
     if options.standard_switch:
-        switch_cpus = [TimingSimpleCPU(switched_out=True, cpu_id=(i))
+        #switch_cpus = [TimingSimpleCPU(switched_out=True, cpu_id=(i))
+        switch_cpus = [DerivO3CPU(switched_out=True, cpu_id=(i))
                        for i in xrange(np)]
         switch_cpus_1 = [DerivO3CPU(switched_out=True, cpu_id=(i))
                         for i in xrange(np)]

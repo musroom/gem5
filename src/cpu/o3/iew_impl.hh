@@ -1053,9 +1053,9 @@ DefaultIEW<Impl>::dispatchInsts(ThreadID tid)
         }
 
         // Check LSQ if inst is LD/ST
-        if ((inst->isAtomic() && ldstQueue.sqFull(tid)) ||
-            (inst->isLoad() && ldstQueue.lqFull(tid)) ||
-            (inst->isStore() && ldstQueue.sqFull(tid))) {
+        if ((inst->isAtomic() && (ldstQueue.sqFull(tid) || inst->lqIdx <0)) ||
+            (inst->isLoad() && (ldstQueue.lqFull(tid) || inst->lqIdx <0)) ||
+            (inst->isStore() && (ldstQueue.sqFull(tid)|| inst->lqIdx <0))) {
             DPRINTF(IEW, "[tid:%i]: Issue: %s has become full.\n",tid,
                     inst->isLoad() ? "LQ" : "SQ");
             //ldstQueue.dumpInsts();
