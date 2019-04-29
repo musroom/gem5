@@ -321,6 +321,8 @@ class DefaultDecode
     Stats::Scalar decodeDecodedInsts;
     /** Stat for total number of squashed instructions. */
     Stats::Scalar decodeSquashedInsts;
+    /**Stat for total number of urgent instructions*/
+    Stats::Scalar decodeUrgentInsts;
 
   public:
     int urgInstMaxSize = 128;

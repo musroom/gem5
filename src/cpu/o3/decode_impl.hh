@@ -165,6 +165,10 @@ DefaultDecode<Impl>::regStats()
         .name(name() + ".SquashedInsts")
         .desc("Number of squashed instructions handled by decode")
         .prereq(decodeSquashedInsts);
+    decodeUrgentInsts
+        .name(name() + ".UrgentInsts")
+        .desc("Number of urgent inst recode in decode")
+        .prereq(decodeUrgentInsts);
 }
 
 template<class Impl>
@@ -801,10 +805,12 @@ DefaultDecode<Impl>::urgInsert(const DynInstPtr &inst, ThreadID tid) {
     
     list<TheISA::PCState>::iterator iter;
     iter = std::find(urgInst[tid].begin(),urgInst[tid].end(),inst->pcState());
-    if(iter != urgInst[tid].end()) {
+    if(iter != urgInst[tid].end()){
+        decodeUrgentInsts ++;
         return;
     } else {
         urgInst[tid].push_back(inst->pcState());
+        decodeUrgentInsts ++;
         //std::cout<<"insert pc to UIT "<<"|inst:";
         //inst->dump();
         //std::cout<<urgInst[tid].size()<<std::endl;

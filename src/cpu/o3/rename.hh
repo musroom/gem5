@@ -582,6 +582,11 @@ class DefaultRename
     Stats::Scalar renamedTempSerializing;
     /** Number of instructions inserted into skid buffers. */
     Stats::Scalar renameSkidInsts;
+    /** Number of instructions insert in LTP */
+    Stats::Scalar InLTPInsts;
+    Stats::Distribution numLTPInstsPer;
+    Stats::Scalar closeLTPCycles;
+    Stats::Scalar openLTPCycles;
   private:
     InstQueue LTP[Impl::MaxThreads];
     unsigned LTPMax;
