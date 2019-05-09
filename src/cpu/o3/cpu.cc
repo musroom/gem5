@@ -442,6 +442,7 @@ FullO3CPU<Impl>::FullO3CPU(DerivO3CPUParams *params)
 
     for (ThreadID tid = 0; tid < this->numThreads; tid++)
         this->thread[tid]->setFuncExeInst(0);
+    std::cout<<"over this function"<<std::endl;
 }
 
 template <class Impl>
@@ -528,7 +529,7 @@ FullO3CPU<Impl>::regStats()
         .desc("IPC: Total IPC of All Threads")
         .precision(6);
     totalIpc =  sum(committedInsts) / numCycles;
-
+    std::cout<<"in init regStats"<<std::endl;
     this->fetch.regStats();
     this->decode.regStats();
     this->rename.regStats();

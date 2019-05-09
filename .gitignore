@@ -10,6 +10,7 @@ cscope.out
 m5out
 run_recode_imp
 output
+output_warm
 /src/doxygen
 /ext/dramsim2/DRAMSim2
 /ext/mcpat/regression/*/*.out

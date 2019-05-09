@@ -269,6 +269,24 @@ DefaultCommit<Impl>::regStats()
         .name(name() + ".bw_lim_events")
         .desc("number cycles where commit BW limit reached")
         ;
+    urgentCommitted
+        .init(cpu->numThreads)
+        .name(name() + ".urgentCommitted")
+        .desc("Number of instructions committed urgent inst")
+        .flags(total)
+        ;
+    fromLTPCommitted
+        .init(cpu->numThreads)
+        .name(name() + ".fromLTPCommitted")
+        .desc("Number of instructions committed and from LTP")
+        .flags(total)
+        ;
+    urgentLTPCommitted
+        .init(cpu->numThreads)
+        .name(name() + ".urgentLTPCommitted") 
+        .desc("Number of instructions committed from LTP and urgent")
+        .flags(total)
+        ;
 }
 
 template <class Impl>
@@ -1441,8 +1459,13 @@ DefaultCommit<Impl>::updateComInstStats(const DynInstPtr &inst)
 {
     ThreadID tid = inst->threadNumber;
 
-    if (!inst->isMicroop() || inst->isLastMicroop())
+    if (!inst->isMicroop() || inst->isLastMicroop()) {
         instsCommitted[tid]++;
+        if(inst->urgent == true) urgentCommitted[tid]++;
+        if(inst->fromLTP == true) fromLTPCommitted[tid]++;
+        if(inst->fromLTP == true && inst->urgent == true) urgentLTPCommitted[tid]++;
+        
+    }
     opsCommitted[tid]++;
 
     // To match the old model, don't count nops and instruction

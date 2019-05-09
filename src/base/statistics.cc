@@ -222,6 +222,7 @@ Info::baseCheck() const
 #ifdef DEBUG
         cprintf("this is stat number %d\n", id);
 #endif
+        std::cout<<"name:"<<name<<std::endl;
         panic("Not all stats have been initialized.\n"
               "You may need to add <ParentClass>::regStats() to a"
               " new SimObject's regStats() function.");

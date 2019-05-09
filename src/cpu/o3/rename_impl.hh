@@ -211,6 +211,7 @@ DefaultRename<Impl>::regStats()
         .desc("Number of insts insert into LTP")
         .prereq(InLTPInsts);
     numLTPInstsPer
+        .init(0,renameWidth,1)
         .name(name() + ".insert_in_LTP_per_cycle")
         .desc("Number of insts insert into LTP per cycle")
         .flags(Stats::pdf)
@@ -856,12 +857,12 @@ DefaultRename<Impl>::renameInsts(ThreadID tid)
         --insts_available;
         
         ++to_rob_insts;
-        numLTPInstsPer.sample(park_count);
         //std::cout<<"to commit,commit size:"<<toCommit->size<<" iew size:"<<toIEWW->size<<"noNeedExe:"<<inst->noNeedExe<<" ";
         //inst->dump();
        
          
     }
+    numLTPInstsPer.sample(park_count);
 
     toIQInProgress[tid] += renamed_insts;
     toRobInProgress[tid] += to_rob_insts;
@@ -1812,7 +1813,7 @@ DefaultRename<Impl>::insertLTP(DynInstPtr &inst,ThreadID tid)
         wakeUpInst(LTP[tid].front());
     }
     LTP[tid].push_back(inst);
-    InLTPInsts ++;
+    ++InLTPInsts;
     DPRINTF(Rename, "insert LTP LTP size:%d,secRenameQueue size:%d,sn:%i,LTP top is sn:%i.\n",
         LTP[tid].size(),secRenameQueue[tid].size(),inst->seqNum,LTP[tid].front()->seqNum);
     return true;

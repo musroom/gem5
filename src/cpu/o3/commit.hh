@@ -521,6 +521,9 @@ class DefaultCommit
 
     /** Number of cycles where the commit bandwidth limit is reached. */
     Stats::Scalar commitEligibleSamples;
+    Stats::Vector urgentCommitted;
+    Stats::Vector fromLTPCommitted;
+    Stats::Vector urgentLTPCommitted;
   public:
     void setDecodeStage(Decode *decode_stage);
     void setRenameStage(Rename *rename_stage);
